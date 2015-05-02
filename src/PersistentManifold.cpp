@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-
+#include "Enums.h"
 #include "CollisionObject.h"
 #include "ManifoldPoint.h"
 #include "PersistentManifold.h"
@@ -21,9 +21,15 @@ bool onContactDestroyed(void* userPersistentData)
 
 bool onContactProcessed(btManifoldPoint& cp, void* body0, void* body1)
 {
-	PersistentManifold::_contactProcessed(gcnew ManifoldPoint(&cp, true),
-		CollisionObject::GetManaged((btCollisionObject*)body0),
-		CollisionObject::GetManaged((btCollisionObject*)body1));
+	if (
+		(((btCollisionObject*)body0)->getCollisionFlags() & (int)CollisionFlags::CustomMaterialCallback) ||
+		(((btCollisionObject*)body1)->getCollisionFlags() & (int)CollisionFlags::CustomMaterialCallback)
+		)
+	{
+		PersistentManifold::_contactProcessed(gcnew ManifoldPoint(&cp, true),
+			CollisionObject::GetManaged((btCollisionObject*)body0),
+			CollisionObject::GetManaged((btCollisionObject*)body1));
+	}
 	return false;
 }
 
