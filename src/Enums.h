@@ -195,7 +195,8 @@ namespace BulletSharp
 		NoContactResponse = btCollisionObject::CF_NO_CONTACT_RESPONSE,
 		CustomMaterialCallback = btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK,
 		CharacterObject = btCollisionObject::CF_CHARACTER_OBJECT,
-		DisableVisualizeObject = btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT
+		DisableVisualizeObject = btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT,
+		ContactProcessedCallback = 64
 	};
 
 	[Flags]

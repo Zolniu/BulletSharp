@@ -22,8 +22,8 @@ bool onContactDestroyed(void* userPersistentData)
 bool onContactProcessed(btManifoldPoint& cp, void* body0, void* body1)
 {
 	if (
-		(((btCollisionObject*)body0)->getCollisionFlags() & (int)CollisionFlags::CustomMaterialCallback) ||
-		(((btCollisionObject*)body1)->getCollisionFlags() & (int)CollisionFlags::CustomMaterialCallback)
+		(((btCollisionObject*)body0)->getCollisionFlags() & (int)CollisionFlags::ContactProcessedCallback) ||
+		(((btCollisionObject*)body1)->getCollisionFlags() & (int)CollisionFlags::ContactProcessedCallback)
 		)
 	{
 		PersistentManifold::_contactProcessed(gcnew ManifoldPoint(&cp, true),
