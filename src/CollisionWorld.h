@@ -184,24 +184,24 @@ namespace BulletSharp
 
 		virtual btScalar AddSingleResult(LocalRayResult^ rayResult, bool normalInWorldSpace) override;
 
-		property IList<BulletSharp::CollisionObject^>^ CollisionObjects
+		property List<BulletSharp::CollisionObject^>^ CollisionObjects
 		{
-			IList<BulletSharp::CollisionObject^>^ get();
+			List<BulletSharp::CollisionObject^>^ get();
 		}
 
-		property IList<btScalar>^ HitFractions
+		property List<btScalar>^ HitFractions
 		{
-			IList<btScalar>^ get();
+			List<btScalar>^ get();
 		}
 
-		property IList<Vector3>^ HitNormalWorld
+		property List<Vector3>^ HitNormalWorld
 		{
-			IList<Vector3>^ get();
+			List<Vector3>^ get();
 		}
 
-		property IList<Vector3>^ HitPointWorld
+		property List<Vector3>^ HitPointWorld
 		{
-			IList<Vector3>^ get();
+			List<Vector3>^ get();
 		}
 
 		property Vector3 RayFromWorld

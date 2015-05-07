@@ -301,22 +301,22 @@ btScalar AllHitsRayResultCallback::AddSingleResult(LocalRayResult^ rayResult, bo
 	return ClosestHitFraction;
 }
 
-IList<CollisionObject^>^ AllHitsRayResultCallback::CollisionObjects::get()
+List<CollisionObject^>^ AllHitsRayResultCallback::CollisionObjects::get()
 {
 	return _collisionObjects;
 }
 
-IList<btScalar>^ AllHitsRayResultCallback::HitFractions::get()
+List<btScalar>^ AllHitsRayResultCallback::HitFractions::get()
 {
 	return _hitFractions;
 }
 
-IList<Vector3>^ AllHitsRayResultCallback::HitNormalWorld::get()
+List<Vector3>^ AllHitsRayResultCallback::HitNormalWorld::get()
 {
 	return _hitNormalWorld;
 }
 
-IList<Vector3>^ AllHitsRayResultCallback::HitPointWorld::get()
+List<Vector3>^ AllHitsRayResultCallback::HitPointWorld::get()
 {
 	return _hitPointWorld;
 }
