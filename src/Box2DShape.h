@@ -13,13 +13,11 @@ namespace BulletSharp
 		Vector3Array^ _vertices;
 
 	public:
-		Box2DShape(Vector3% boxHalfExtents);
 		Box2DShape(Vector3 boxHalfExtents);
 		Box2DShape(btScalar boxHalfExtentsX, btScalar boxHalfExtentsY, btScalar boxHalfExtentsZ);
 		Box2DShape(btScalar boxHalfExtent); // cube helper
 
 		Vector4 GetPlaneEquation(int i);
-		Vector3 GetVertex(int i);
 
 		property Vector3 Centroid
 		{

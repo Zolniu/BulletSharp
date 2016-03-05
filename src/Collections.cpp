@@ -101,13 +101,13 @@ void GenericList<T>::Clear()
 }
 
 generic<class T>
-System::Collections::IEnumerator^ GenericList<T>::GetEnumerator()
+System::Collections::IEnumerator^ GenericList<T>::GetObjectEnumerator()
 {
 	return gcnew ListEnumerator<T>(this);
 }
 
 generic<class T>
-IEnumerator<T>^ GenericList<T>::GetSpecializedEnumerator()
+IEnumerator<T>^ GenericList<T>::GetEnumerator()
 {
 	return gcnew ListEnumerator<T>(this);
 }
@@ -357,10 +357,6 @@ void CompoundShapeChildArray::CopyTo(array<CompoundShapeChild^>^ array, int arra
 	if (arrayIndex + _length > array->Length)
 		throw gcnew ArgumentException("Array too small.");
 
-	if (_length == 0)
-		return;
-
-	btCompoundShapeChild* childList = Native->getChildList();
 	int i;
 	for (i=0; i<_length; i++)
 	{
@@ -440,6 +436,7 @@ int CompoundShapeChildArray::Count::get()
 {
 	return Native->getNumChildShapes();
 }
+
 
 #ifndef DISABLE_DBVT
 

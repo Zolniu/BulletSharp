@@ -7,14 +7,6 @@
 
 #define Native static_cast<btBox2dShape*>(_native)
 
-Box2DShape::Box2DShape(Vector3% boxHalfExtents)
-	: PolyhedralConvexShape(0)
-{
-	VECTOR3_CONV(boxHalfExtents);
-	UnmanagedPointer = new btBox2dShape(VECTOR3_USE(boxHalfExtents));
-	VECTOR3_DEL(boxHalfExtents);
-}
-
 Box2DShape::Box2DShape(Vector3 boxHalfExtents)
 	: PolyhedralConvexShape(0)
 {
@@ -37,15 +29,6 @@ Box2DShape::Box2DShape(btScalar boxHalfExtents)
 	btVector3* boxHalfExtentsTemp = ALIGNED_NEW(btVector3) (boxHalfExtents, boxHalfExtents, boxHalfExtents);
 	UnmanagedPointer = new btBox2dShape(*boxHalfExtentsTemp);
 	ALIGNED_FREE(boxHalfExtentsTemp);
-}
-
-Vector3 Box2DShape::GetVertex(int i)
-{
-	btVector3* vertexTemp = ALIGNED_NEW(btVector3);
-	Native->getVertex(i, *vertexTemp);
-	Vector3 vertex = Math::BtVector3ToVector3(vertexTemp);
-	ALIGNED_FREE(vertexTemp);
-	return vertex;
 }
 
 Vector4 Box2DShape::GetPlaneEquation(int i)

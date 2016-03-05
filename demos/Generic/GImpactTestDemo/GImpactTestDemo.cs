@@ -32,11 +32,7 @@ namespace GImpactTestDemo
             Freelook.SetEyeTarget(eye, target);
 
             Graphics.SetFormText("BulletSharp - GImpact Test Demo");
-            Graphics.SetInfoText("Move using mouse and WASD+shift\n" +
-                "F3 - Toggle debug\n" +
-                //"F11 - Toggle fullscreen\n" +
-                "Space - Shoot box\n" +
-                ". - Shoot Bunny");
+            DemoText = ". - Shoot Bunny";
 
             Graphics.FarPlane = 400.0f;
         }
@@ -200,6 +196,7 @@ namespace GImpactTestDemo
 #else
             //trimeshShape = new GImpactMeshData(indexVertexArrays);
 #endif
+            CollisionShapes.Add(trimeshShape);
 
 
             // Create Bunny Shape
@@ -226,6 +223,7 @@ namespace GImpactTestDemo
 #else
             //trimeshShape2 = new GImpactMeshData(indexVertexArrays2);
 #endif
+            CollisionShapes.Add(trimeshShape2);
 
             //register GIMPACT algorithm
 #if BULLET_GIMPACT
@@ -265,6 +263,14 @@ namespace GImpactTestDemo
 
             base.OnHandleInput();
         }
+
+        public override void ExitPhysics()
+        {
+            base.ExitPhysics();
+
+            indexVertexArrays.Dispose();
+            indexVertexArrays2.Dispose();
+        }
     }
 
     static class Program
@@ -274,7 +280,7 @@ namespace GImpactTestDemo
         {
             using (Demo demo = new GImpactTestDemo())
             {
-                LibraryManager.Initialize(demo);
+                GraphicsLibraryManager.Run(demo);
             }
         }
     }

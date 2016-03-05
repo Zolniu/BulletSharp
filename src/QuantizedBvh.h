@@ -15,9 +15,7 @@ namespace BulletSharp
 
 		QuantizedBvhNode(btQuantizedBvhNode* native);
 
-	public:
 		!QuantizedBvhNode();
-	protected:
 		~QuantizedBvhNode();
 
 	public:
@@ -67,9 +65,7 @@ namespace BulletSharp
 
 		OptimizedBvhNode(btOptimizedBvhNode* native);
 
-	public:
 		!OptimizedBvhNode();
-	protected:
 		~OptimizedBvhNode();
 
 	public:
@@ -113,16 +109,14 @@ namespace BulletSharp
 
 		NodeOverlapCallback(btNodeOverlapCallback* native);
 
-	public:
 		!NodeOverlapCallback();
-	protected:
 		~NodeOverlapCallback();
 
 	public:
 		void ProcessNode(int subPart, int triangleIndex);
 	};
 #endif
-	public ref class QuantizedBvh : ITrackingDisposable
+	public ref class QuantizedBvh
 	{
 	public:
 		enum class TraversalMode
@@ -132,19 +126,16 @@ namespace BulletSharp
 			Recursive = btQuantizedBvh::TRAVERSAL_RECURSIVE
 		};
 
-	public:
-		virtual event EventHandler^ OnDisposing;
-		virtual event EventHandler^ OnDisposed;
-
 	internal:
 		btQuantizedBvh* _native;
 
-		QuantizedBvh(btQuantizedBvh* native);
-		static QuantizedBvh^ GetManaged(btQuantizedBvh* quantizedBvh);
+	private:
+		bool _preventDelete;
 
-	public:
+	internal:
+		QuantizedBvh(btQuantizedBvh* native, bool preventDelete);
+
 		!QuantizedBvh();
-	protected:
 		~QuantizedBvh();
 
 	public:
@@ -204,7 +195,7 @@ namespace BulletSharp
 
 		property QuantizedNodeArray^ QuantizedNodeArray
 		{
-			QuantizedNodeArray^ get();
+			BulletSharp::QuantizedNodeArray^ get();
 		}
 
 		property BvhSubtreeInfoArray^ SubtreeInfoArray

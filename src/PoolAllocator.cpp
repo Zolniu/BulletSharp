@@ -4,9 +4,10 @@
 
 #include "PoolAllocator.h"
 
-PoolAllocator::PoolAllocator(btPoolAllocator* native)
+PoolAllocator::PoolAllocator(btPoolAllocator* native, bool preventDelete)
 {
 	_native = native;
+	_preventDelete = preventDelete;
 }
 
 PoolAllocator::~PoolAllocator()
@@ -16,15 +17,11 @@ PoolAllocator::~PoolAllocator()
 
 PoolAllocator::!PoolAllocator()
 {
-	if (this->IsDisposed)
-		return;
-
-	OnDisposing(this, nullptr);
-
-	delete _native;
+	if (!_preventDelete)
+	{
+		delete _native;
+	}
 	_native = NULL;
-
-	OnDisposed(this, nullptr);
 }
 
 PoolAllocator::PoolAllocator(int elemSize, int maxElements)

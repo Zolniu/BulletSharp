@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 
 #include "CollisionObjectWrapper.h"
+#include "CollisionShape.h"
 #include "ManifoldPoint.h"
 
 ManifoldPoint::ManifoldPoint(btManifoldPoint* native, bool preventDelete)
@@ -25,9 +26,33 @@ bool onContactAdded(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0
 	ManifoldPoint::_contactAdded(nullptr, args);
 	return args->IsContactModified;
 	*/
+	CollisionObjectWrapper^ colObj0WrapManaged = gcnew CollisionObjectWrapper((btCollisionObjectWrapper*)colObj0Wrap);
+	CollisionObjectWrapper^ colObj1WrapManaged = gcnew CollisionObjectWrapper((btCollisionObjectWrapper*)colObj1Wrap);
+
 	ManifoldPoint::_contactAdded(gcnew ManifoldPoint(&cp, true),
 		gcnew CollisionObjectWrapper((btCollisionObjectWrapper*)colObj0Wrap), partId0, index0,
 		gcnew CollisionObjectWrapper((btCollisionObjectWrapper*)colObj1Wrap), partId1, index1);
+
+	// Bullet may use temporary btTriangleShapes that can be destroyed before before non-deterministic disposal.
+	// Check if these collision shapes were referenced in managed code and clean up any references here.
+	btCollisionShape* collisionShape0 = (btCollisionShape*)colObj0Wrap->getCollisionShape();
+	btCollisionShape* collisionShape1 = (btCollisionShape*)colObj1Wrap->getCollisionShape();
+	
+	if (collisionShape0->getUserPointer() &&
+		collisionShape0->getShapeType() == TRIANGLE_SHAPE_PROXYTYPE &&
+		colObj0Wrap->getCollisionObject()->getCollisionShape() != collisionShape0)
+	{
+		delete CollisionShape::GetManaged(collisionShape0);
+		collisionShape0->setUserPointer(0);
+	}
+	if (collisionShape1->getUserPointer() &&
+		collisionShape1->getShapeType() == TRIANGLE_SHAPE_PROXYTYPE &&
+		colObj1Wrap->getCollisionObject()->getCollisionShape() != collisionShape1)
+	{
+		delete CollisionShape::GetManaged(collisionShape1);
+		collisionShape1->setUserPointer(0);
+	}
+
 	return false;
 }
 
@@ -48,9 +73,31 @@ void ManifoldPoint::ContactAdded::remove(ContactAddedEventHandler^ callback)
 bool onContactAdded(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap,
 	int partId0, int index0, const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
 {
-	return ManifoldPoint::_contactAdded(gcnew ManifoldPoint(&cp, true),
+	bool ret = ManifoldPoint::_contactAdded(gcnew ManifoldPoint(&cp, true),
 		gcnew CollisionObjectWrapper((btCollisionObjectWrapper*)colObj0Wrap), partId0, index0,
 		gcnew CollisionObjectWrapper((btCollisionObjectWrapper*)colObj1Wrap), partId1, index1);
+
+	// Bullet may use temporary btTriangleShapes that can be destroyed before before non-deterministic disposal.
+	// Check if these collision shapes were referenced in managed code and clean up any references here.
+	btCollisionShape* collisionShape0 = (btCollisionShape*)colObj0Wrap->getCollisionShape();
+	btCollisionShape* collisionShape1 = (btCollisionShape*)colObj1Wrap->getCollisionShape();
+	
+	if (collisionShape0->getUserPointer() &&
+		collisionShape0->getShapeType() == TRIANGLE_SHAPE_PROXYTYPE &&
+		colObj0Wrap->getCollisionObject()->getCollisionShape() != collisionShape0)
+	{
+		delete CollisionShape::GetManaged(collisionShape0);
+		collisionShape0->setUserPointer(0);
+	}
+	if (collisionShape1->getUserPointer() &&
+		collisionShape1->getShapeType() == TRIANGLE_SHAPE_PROXYTYPE &&
+		colObj1Wrap->getCollisionObject()->getCollisionShape() != collisionShape1)
+	{
+		delete CollisionShape::GetManaged(collisionShape1);
+		collisionShape1->setUserPointer(0);
+	}
+
+	return ret;
 }
 
 ContactAdded^ ManifoldPoint::ContactAdded::get()
@@ -157,22 +204,22 @@ void ManifoldPoint::CombinedRollingFriction::set(btScalar value)
 	_native->m_combinedRollingFriction = value;
 }
 
-btScalar ManifoldPoint::ContactCfm1::get()
+btScalar ManifoldPoint::ContactCfm::get()
 {
-	return _native->m_contactCFM1;
+	return _native->m_contactCFM;
 }
-void ManifoldPoint::ContactCfm1::set(btScalar value)
+void ManifoldPoint::ContactCfm::set(btScalar value)
 {
-	_native->m_contactCFM1 = value;
+	_native->m_contactCFM = value;
 }
 
-btScalar ManifoldPoint::ContactCfm2::get()
+btScalar ManifoldPoint::ContactErp::get()
 {
-	return _native->m_contactCFM2;
+	return _native->m_contactERP;
 }
-void ManifoldPoint::ContactCfm2::set(btScalar value)
+void ManifoldPoint::ContactErp::set(btScalar value)
 {
-	_native->m_contactCFM2 = value;
+	_native->m_contactERP = value;
 }
 
 btScalar ManifoldPoint::ContactMotion1::get()
@@ -193,6 +240,15 @@ void ManifoldPoint::ContactMotion2::set(btScalar value)
 	_native->m_contactMotion2 = value;
 }
 
+ContactPointFlags ManifoldPoint::ContactPointFlags::get()
+{
+	return (BulletSharp::ContactPointFlags)_native->m_contactPointFlags;
+}
+void ManifoldPoint::ContactPointFlags::set(BulletSharp::ContactPointFlags value)
+{
+	_native->m_contactPointFlags = (btContactPointFlags)value;
+}
+
 btScalar ManifoldPoint::Distance::get()
 {
 	return _native->getDistance();
@@ -209,6 +265,15 @@ btScalar ManifoldPoint::Distance1::get()
 void ManifoldPoint::Distance1::set(btScalar value)
 {
 	_native->m_distance1 = value;
+}
+
+btScalar ManifoldPoint::FrictionCfm::get()
+{
+	return _native->m_frictionCFM;
+}
+void ManifoldPoint::FrictionCfm::set(btScalar value)
+{
+	_native->m_frictionCFM = value;
 }
 
 int ManifoldPoint::Index0::get()
@@ -245,15 +310,6 @@ Vector3 ManifoldPoint::LateralFrictionDir2::get()
 void ManifoldPoint::LateralFrictionDir2::set(Vector3 value)
 {
 	Math::Vector3ToBtVector3(value, &_native->m_lateralFrictionDir2);
-}
-
-bool ManifoldPoint::LateralFrictionInitialized::get()
-{
-	return _native->m_lateralFrictionInitialized;
-}
-void ManifoldPoint::LateralFrictionInitialized::set(bool value)
-{
-	_native->m_lateralFrictionInitialized = value;
 }
 
 int ManifoldPoint::LifeTime::get()

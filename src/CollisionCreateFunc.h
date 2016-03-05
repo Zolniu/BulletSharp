@@ -15,11 +15,9 @@ namespace BulletSharp
 		bool _preventDelete;
 
 	internal:
-		CollisionAlgorithmCreateFunc(btCollisionAlgorithmCreateFunc* native);
+		CollisionAlgorithmCreateFunc(btCollisionAlgorithmCreateFunc* native, bool preventDelete);
 
-	public:
 		!CollisionAlgorithmCreateFunc();
-	protected:
 		~CollisionAlgorithmCreateFunc();
 
 	public:

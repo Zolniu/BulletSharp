@@ -15,9 +15,8 @@ namespace BulletSharp
 	public:
 		ref class CreateFunc : CollisionAlgorithmCreateFunc
 		{
-		private:
-			SimplexSolverInterface^ _simplexSolver;
 			ConvexPenetrationDepthSolver^ _pdSolver;
+			SimplexSolverInterface^ _simplexSolver;
 
 		public:
 			CreateFunc(SimplexSolverInterface^ simplexSolver, ConvexPenetrationDepthSolver^ pdSolver);
@@ -33,7 +32,7 @@ namespace BulletSharp
 				int get();
 				void set(int value);
 			}
-			/*
+
 			property ConvexPenetrationDepthSolver^ PdSolver
 			{
 				ConvexPenetrationDepthSolver^ get();
@@ -44,7 +43,7 @@ namespace BulletSharp
 			{
 				VoronoiSimplexSolver^ get();
 				void set(VoronoiSimplexSolver^ value);
-			}*/
+			}
 		};
 
 		Convex2DConvex2DAlgorithm(PersistentManifold mf, CollisionAlgorithmConstructionInfo^ ci,

@@ -11,19 +11,10 @@ namespace BulletSharp
 	private:
 		MlcpSolverInterface^ _mlcpSolver;
 
-	internal:
-		MlcpSolver(btMLCPSolver* native);
-
 	public:
 		MlcpSolver(MlcpSolverInterface^ solver);
 
 		void SetMLCPSolver(MlcpSolverInterface^ solver);
-
-		property btScalar Cfm
-		{
-			btScalar get();
-			void set(btScalar cfm);
-		}
 
 		property int NumFallbacks
 		{

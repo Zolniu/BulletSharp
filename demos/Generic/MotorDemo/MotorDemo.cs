@@ -37,9 +37,11 @@ namespace MotorDemo
 
                 //using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
                 DefaultMotionState myMotionState = new DefaultMotionState(startTransform);
-                RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, shape, localInertia);
-                RigidBody body = new RigidBody(rbInfo);
-                rbInfo.Dispose();
+                RigidBody body;
+                using (var rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, shape, localInertia))
+                {
+                    body = new RigidBody(rbInfo);
+                }
 
                 ownerWorld.AddRigidBody(body);
 
@@ -190,10 +192,6 @@ namespace MotorDemo
             Freelook.SetEyeTarget(eye, target);
 
             Graphics.SetFormText("BulletSharp - Motor Demo");
-            Graphics.SetInfoText("Move using mouse and WASD+shift\n" +
-                "F3 - Toggle debug\n" +
-                //"F11 - Toggle fullscreen\n" +
-                "Space - Shoot box");
 
             DebugDrawMode = DebugDrawModes.DrawConstraintLimits | DebugDrawModes.DrawConstraints | DebugDrawModes.DrawWireframe;
         }
@@ -282,7 +280,7 @@ namespace MotorDemo
         {
             using (Demo demo = new MotorDemo())
             {
-                LibraryManager.Initialize(demo);
+                GraphicsLibraryManager.Run(demo);
             }
         }
     }

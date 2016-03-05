@@ -12,7 +12,7 @@ using Device = SlimDX.Direct3D9.Device;
 
 namespace DemoFramework
 {
-    public class Game : System.IDisposable
+    public class Game : IDisposable
     {
         public RenderForm Form
         {
@@ -83,10 +83,9 @@ namespace DemoFramework
         {
             get
             {
-                if (DebugDrawer == null)
-                    return debugDrawMode;
-                else
-                    return DebugDrawer.DebugMode;
+                if (DebugDrawer == null) return debugDrawMode;
+
+                return DebugDrawer.DebugMode;
             }
             set
             {
@@ -463,7 +462,7 @@ namespace DemoFramework
                     {
                         Vector3 rayFrom = Freelook.Eye;
 
-                        ClosestRayResultCallback rayCallback = new ClosestRayResultCallback(rayFrom, rayTo);
+                        ClosestRayResultCallback rayCallback = new ClosestRayResultCallback(ref rayFrom, ref rayTo);
                         PhysicsContext.World.RayTest(rayFrom, rayTo, rayCallback);
                         if (rayCallback.HasHit)
                         {

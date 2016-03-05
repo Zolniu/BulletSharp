@@ -18,11 +18,8 @@ namespace DemoFramework.OpenTK
         Bitmap bmp;
         System.Drawing.Graphics gfx;
         int texture;
-        Rectangle dirty_region;
+        Rectangle dirtyRegion;
         bool graphicsInitialized = false;
-        float fps = -1;
-        string textString = "";
-        CultureInfo culture = CultureInfo.InvariantCulture;
         int width = 270;
         int height = 150;
         GLControl glControl;
@@ -34,6 +31,7 @@ namespace DemoFramework.OpenTK
             set { _isEnabled = value; }
         }
 
+        bool _isDirty;
         string _text = "";
         public string Text
         {
@@ -41,8 +39,7 @@ namespace DemoFramework.OpenTK
             set
             {
                 _text = value;
-                textString = string.Format("{0} fps / {1} ms\nF8 - Graphics engine\n{2}",
-                    fps.ToString("0.00", culture), (1000.0f / fps).ToString("0.00", culture), value);
+                _isDirty = true;
             }
         }
 
@@ -76,49 +73,46 @@ namespace DemoFramework.OpenTK
         public void Clear()
         {
             gfx.Clear(Color.FromArgb(0));
-            dirty_region = new Rectangle(0, 0, bmp.Width, bmp.Height);
+            dirtyRegion = new Rectangle(0, 0, bmp.Width, bmp.Height);
         }
 
-        public void OnRender(float framesPerSecond)
+        public void OnRender()
         {
-            if (_isEnabled == false)
-                return;
+            if (!_isEnabled) return;
 
             if (!graphicsInitialized)
                 InitializeGraphics();
 
-            if (fps != framesPerSecond)
+            if (_isDirty)
             {
-                fps = framesPerSecond;
-                textString = string.Format("{0} fps / {1} ms\nF8 - Graphics engine\n{2}",
-                    fps.ToString("0.00", culture), (1000.0f / fps).ToString("0.00", culture), _text);
+                Clear();
+                gfx.DrawString(_text, font, brush, 0, 0);
+
+                SizeF size = gfx.MeasureString(_text, font);
+                dirtyRegion =
+                    Rectangle.Round(RectangleF.Union(dirtyRegion, new RectangleF(0, 0, size.Width, size.Height)));
+                dirtyRegion = Rectangle.Intersect(dirtyRegion, new Rectangle(0, 0, bmp.Width, bmp.Height));
+
+
+                // Update bitmap
+                if (dirtyRegion != RectangleF.Empty)
+                {
+                    System.Drawing.Imaging.BitmapData data = bmp.LockBits(dirtyRegion,
+                        System.Drawing.Imaging.ImageLockMode.ReadOnly,
+                        System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+                    GL.BindTexture(TextureTarget.Texture2D, texture);
+                    GL.TexSubImage2D(TextureTarget.Texture2D, 0,
+                        dirtyRegion.X, dirtyRegion.Y, dirtyRegion.Width, dirtyRegion.Height,
+                        PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+
+                    bmp.UnlockBits(data);
+
+                    dirtyRegion = Rectangle.Empty;
+                }
+
+                _isDirty = false;
             }
-
-            Clear();
-            gfx.DrawString(textString, font, brush, 0, 0);
-
-            SizeF size = gfx.MeasureString(textString, font);
-            dirty_region = Rectangle.Round(RectangleF.Union(dirty_region, new RectangleF(0, 0, size.Width, size.Height)));
-            dirty_region = Rectangle.Intersect(dirty_region, new Rectangle(0, 0, bmp.Width, bmp.Height));
-
-
-            // Update bitmap
-            if (dirty_region != RectangleF.Empty)
-            {
-                System.Drawing.Imaging.BitmapData data = bmp.LockBits(dirty_region,
-                    System.Drawing.Imaging.ImageLockMode.ReadOnly,
-                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-
-                GL.BindTexture(TextureTarget.Texture2D, texture);
-                GL.TexSubImage2D(TextureTarget.Texture2D, 0,
-                    dirty_region.X, dirty_region.Y, dirty_region.Width, dirty_region.Height,
-                    PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
-
-                bmp.UnlockBits(data);
-
-                dirty_region = Rectangle.Empty;
-            }
-
 
             //Render bitmap
             GL.MatrixMode(MatrixMode.Projection);
@@ -137,15 +131,13 @@ namespace DemoFramework.OpenTK
 
             GL.Begin(PrimitiveType.Quads);
             GL.TexCoord2(0.0f, 1.0f); GL.Vertex2(0, 0);
-            GL.TexCoord2(1.0f, 1.0f); GL.Vertex2(width, 0);
-            GL.TexCoord2(1.0f, 0.0f); GL.Vertex2(width, height);
             GL.TexCoord2(0.0f, 0.0f); GL.Vertex2(0, height);
+            GL.TexCoord2(1.0f, 0.0f); GL.Vertex2(width, height);
+            GL.TexCoord2(1.0f, 1.0f); GL.Vertex2(width, 0);
             GL.End();
 
             GL.Disable(EnableCap.Texture2D);
         }
-
-        #region IDisposable Members
 
         void Dispose(bool disposing)
         {
@@ -176,7 +168,5 @@ namespace DemoFramework.OpenTK
         {
             Console.WriteLine("[Warning] Resource leaked: {0}.", typeof(TextRenderer));
         }
-
-        #endregion
     }
 }

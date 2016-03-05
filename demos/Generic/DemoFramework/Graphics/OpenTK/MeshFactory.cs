@@ -28,7 +28,7 @@ namespace DemoFramework.OpenTK
         public DrawElementsType ElementsType;
         public PrimitiveType PrimitiveType = PrimitiveType.Triangles;
 
-        public List<InstanceData> InstanceDataList = new List<InstanceData>();
+        public List<InstanceData> Instances = new List<InstanceData>();
         public Vector3[] SoftBodyVertices;
         public Vector3[] SoftBodyNormals;
 
@@ -193,30 +193,30 @@ namespace DemoFramework.OpenTK
 
     class MeshFactory : DemoFramework.MeshFactory
     {
-        Demo demo;
+        Demo _demo;
 
         Dictionary<CollisionShape, ShapeData> shapes = new Dictionary<CollisionShape, ShapeData>();
         List<CollisionShape> removeList = new List<CollisionShape>();
 
-        Color groundColor = Color.Green;
-        Color activeColor = Color.Orange;
-        Color passiveColor = Color.Red;
-        Color softBodyColor = Color.LightBlue;
-        Color linkColor = Color.Black;
+        static Color groundColor = Color.Green;
+        static Color activeColor = Color.Orange;
+        static Color passiveColor = Color.Red;
+        static Color softBodyColor = Color.LightBlue;
+        static Color linkColor = Color.Black;
 
-        int modelViewMatrixLocation;
+        int worldMatrixLocation;
         int vertexPositionLocation;
         int vertexNormalLocation;
         int vertexColorLocation;
 
         public MeshFactory(Demo demo)
         {
-            this.demo = demo;
+            _demo = demo;
         }
 
-        public void SetShaderLocations(int modelViewMatrix, int position, int normal, int color)
+        public void SetShaderLocations(int worldMatrix, int position, int normal, int color)
         {
-            modelViewMatrixLocation = modelViewMatrix;
+            worldMatrixLocation = worldMatrix;
             vertexPositionLocation = position;
             vertexNormalLocation = normal;
             vertexColorLocation = color;
@@ -227,20 +227,24 @@ namespace DemoFramework.OpenTK
             ShapeData shapeData = new ShapeData();
             uint[] indices;
             BulletSharp.Vector3[] vertexBuffer = CreateShape(shape, out indices);
-            shapeData.VertexCount = vertexBuffer.Length / 2;
 
-            Vector3[] vertices = new Vector3[shapeData.VertexCount];
-            Vector3[] normals = new Vector3[shapeData.VertexCount];
-
-            int i;
-            for (i = 0; i < shapeData.VertexCount; i++)
+            if (vertexBuffer != null)
             {
-                vertices[i] = vertexBuffer[i * 2];
-                normals[i] = vertexBuffer[i * 2 + 1];
-            }
+                shapeData.VertexCount = vertexBuffer.Length / 2;
 
-            shapeData.SetVertexBuffer(vertices);
-            shapeData.SetNormalBuffer(normals);
+                Vector3[] vertices = new Vector3[shapeData.VertexCount];
+                Vector3[] normals = new Vector3[shapeData.VertexCount];
+
+                int i;
+                for (i = 0; i < shapeData.VertexCount; i++)
+                {
+                    vertices[i] = vertexBuffer[i * 2];
+                    normals[i] = vertexBuffer[i * 2 + 1];
+                }
+
+                shapeData.SetVertexBuffer(vertices);
+                shapeData.SetNormalBuffer(normals);
+            }
 
             if (indices != null)
             {
@@ -259,12 +263,6 @@ namespace DemoFramework.OpenTK
             return shapeData;
         }
 
-        public ShapeData CreateSoftBody()
-        {
-            // Soft body geometry is recreated each frame. Nothing to do here.
-            return new ShapeData();
-        }
-
         public override void RemoveShape(CollisionShape shape)
         {
             if (shapes.ContainsKey(shape))
@@ -280,16 +278,13 @@ namespace DemoFramework.OpenTK
 
             if (shapes.TryGetValue(shape, out shapeData) == false)
             {
-                switch (shape.ShapeType)
+                if (shape.ShapeType == BroadphaseNativeType.SoftBodyShape)
                 {
-                    case BroadphaseNativeType.SoftBodyShape:
-                        shapeData = CreateSoftBody();
-                        break;
-                    case BroadphaseNativeType.Convex2DShape:
-                        return InitShapeData((shape as Convex2DShape).ChildShape);
-                    default:
-                        shapeData = CreateShape(shape);
-                        break;
+                    shapeData = new ShapeData();
+                }
+                else
+                {
+                    shapeData = CreateShape(shape);
                 }
 
                 // Create an initial instance data buffer for a single instance
@@ -303,68 +298,69 @@ namespace DemoFramework.OpenTK
             return shapeData;
         }
 
-        void InitInstanceData(CollisionObject colObj, CollisionShape shape, ref BulletSharp.Matrix transform)
+        void InitRigidBodyInstance(CollisionObject colObj, CollisionShape shape, ref BulletSharp.Matrix transform)
         {
-            switch (shape.ShapeType)
+            if (shape.ShapeType == BroadphaseNativeType.CompoundShape)
             {
-                case BroadphaseNativeType.CompoundShape:
-                    foreach (CompoundShapeChild child in (shape as CompoundShape).ChildList)
-                    {
-                        BulletSharp.Matrix childTransform = child.Transform * transform;
-                        InitInstanceData(colObj, child.ChildShape, ref childTransform);
-                    }
-                    break;
-                case BroadphaseNativeType.SoftBodyShape:
-                    ShapeData shapeData = InitShapeData(shape);
-                    UpdateSoftBody(colObj as SoftBody, shapeData);
-
-                    shapeData.InstanceDataList.Add(new InstanceData()
-                    {
-                        WorldTransform = MathHelper.Convert(ref transform),
-                        Color = softBodyColor
-                    });
-                    break;
-                default:
-                    InitShapeData(shape).InstanceDataList.Add(new InstanceData()
-                    {
-                        WorldTransform = MathHelper.Convert(ref transform),
-                        Color = "Ground".Equals(colObj.UserObject) ? groundColor :
-                            colObj.ActivationState == ActivationState.ActiveTag ? activeColor : passiveColor
-                    });
-                    break;
+                foreach (CompoundShapeChild child in (shape as CompoundShape).ChildList)
+                {
+                    BulletSharp.Matrix childTransform = child.Transform * transform;
+                    InitRigidBodyInstance(colObj, child.ChildShape, ref childTransform);
+                }
+            }
+            else
+            {
+                InitShapeData(shape).Instances.Add(new InstanceData()
+                {
+                    WorldTransform = MathHelper.Convert(ref transform),
+                    Color = "Ground".Equals(colObj.UserObject) ? groundColor :
+                        colObj.ActivationState == ActivationState.ActiveTag ? activeColor : passiveColor
+                });
             }
         }
 
-        public void InitInstancedRender(AlignedCollisionObjectArray objects)
+        void InitSoftBodyInstance(SoftBody softBody, CollisionShape shape)
+        {
+            var shapeData = InitShapeData(shape);
+            shapeData.Instances.Add(new InstanceData()
+            {
+                WorldTransform = Matrix4.Identity,
+                Color = softBodyColor
+            });
+
+            UpdateSoftBody(softBody, shapeData);
+        }
+
+        public void InitInstancedRender()
         {
             // Clear instance data
             foreach (ShapeData s in shapes.Values)
-                s.InstanceDataList.Clear();
+                s.Instances.Clear();
 
-            int i = objects.Count - 1;
-            for (; i >= 0; i--)
+            // Gather instance data
+            foreach (var colObj in _demo.World.CollisionObjectArray)
             {
-                CollisionObject colObj = objects[i];
+                var shape = colObj.CollisionShape;
 
-                BulletSharp.Matrix transform;
                 if (colObj is SoftBody)
                 {
-                    if (demo.IsDebugDrawEnabled)
+                    if (_demo.IsDebugDrawEnabled)
                         continue;
-                    transform = BulletSharp.Matrix.Identity;
+                    InitSoftBodyInstance(colObj as SoftBody, shape);
                 }
                 else
                 {
+                    Matrix transform;
                     colObj.GetWorldTransform(out transform);
+                    InitRigidBodyInstance(colObj, shape, ref transform);
                 }
-                InitInstanceData(colObj, colObj.CollisionShape, ref transform);
             }
 
             foreach (KeyValuePair<CollisionShape, ShapeData> sh in shapes)
             {
                 ShapeData s = sh.Value;
 
-                if (s.InstanceDataList.Count == 0)
+                if (s.Instances.Count == 0)
                 {
                     removeList.Add(sh.Key);
                 }
@@ -399,17 +395,18 @@ namespace DemoFramework.OpenTK
                 */
             }
 
+            // Remove shapes that had no instances
             if (removeList.Count != 0)
             {
-                for (i = removeList.Count - 1; i >= 0; i--)
+                foreach (var shape in removeList)
                 {
-                    shapes.Remove(removeList[i]);
+                    shapes.Remove(shape);
                 }
                 removeList.Clear();
             }
         }
 
-        public void RenderInstanced(ref Matrix4 lookat)
+        public void RenderInstanced()
         {
             GL.EnableVertexAttribArray(vertexPositionLocation);
 
@@ -427,17 +424,17 @@ namespace DemoFramework.OpenTK
                 GL.BindBuffer(BufferTarget.ArrayBuffer, s.VertexBufferID);
                 GL.VertexAttribPointer(vertexPositionLocation, 3, VertexAttribPointerType.Float, false, Vector3.SizeInBytes, IntPtr.Zero);
 
-                Matrix4 modelLookAt;
+                Matrix4 worldMatrix;
 
                 // Index (element) buffer
                 if (s.ElementCount != 0)
                 {
                     GL.BindBuffer(BufferTarget.ElementArrayBuffer, s.ElementBufferID);
 
-                    foreach (InstanceData instance in s.InstanceDataList)
+                    foreach (InstanceData instance in s.Instances)
                     {
-                        modelLookAt = instance.WorldTransform * lookat;
-                        GL.UniformMatrix4(modelViewMatrixLocation, false, ref modelLookAt);
+                        worldMatrix = instance.WorldTransform;
+                        GL.UniformMatrix4(worldMatrixLocation, false, ref worldMatrix);
                         GL.Uniform4(vertexColorLocation, instance.Color);
                         GL.DrawElements(s.PrimitiveType, s.ElementCount, s.ElementsType, IntPtr.Zero);
                     }
@@ -446,10 +443,10 @@ namespace DemoFramework.OpenTK
                 }
                 else
                 {
-                    foreach (InstanceData instance in s.InstanceDataList)
+                    foreach (InstanceData instance in s.Instances)
                     {
-                        modelLookAt = instance.WorldTransform * lookat;
-                        GL.UniformMatrix4(modelViewMatrixLocation, false, ref modelLookAt);
+                        worldMatrix = instance.WorldTransform;
+                        GL.UniformMatrix4(worldMatrixLocation, false, ref worldMatrix);
                         GL.Uniform4(vertexColorLocation, instance.Color);
                         GL.DrawArrays(s.PrimitiveType, 0, s.VertexCount);
                     }

@@ -13,15 +13,7 @@ namespace BulletSharp
 	internal:
 		btJointFeedback* _native;
 
-	private:
-		bool _preventDelete;
-
-	internal:
-		JointFeedback(btJointFeedback* native, bool preventDelete);
-
-	public:
 		!JointFeedback();
-	protected:
 		~JointFeedback();
 
 	public:
@@ -60,15 +52,7 @@ namespace BulletSharp
 		internal:
 			btTypedConstraint::btConstraintInfo1* _native;
 
-		private:
-			bool _preventDelete;
-
-		internal:
-			ConstraintInfo1(btTypedConstraint::btConstraintInfo1* native, bool preventDelete);
-
-		public:
 			!ConstraintInfo1();
-		protected:
 			~ConstraintInfo1();
 
 		public:
@@ -93,7 +77,6 @@ namespace BulletSharp
 			btTypedConstraint::btConstraintInfo2* _native;
 
 		private:
-			bool _preventDelete;
 			ScalarArray^ _cfm;
 			ScalarArray^ _constraintError;
 			ScalarArray^ _j1angularAxis;
@@ -103,12 +86,7 @@ namespace BulletSharp
 			ScalarArray^ _lowerLimit;
 			ScalarArray^ _upperLimit;
 
-		internal:
-			ConstraintInfo2(btTypedConstraint::btConstraintInfo2* native, bool preventDelete);
-
-		public:
 			!ConstraintInfo2();
-		protected:
 			~ConstraintInfo2();
 
 		public:
@@ -213,9 +191,7 @@ namespace BulletSharp
 
 		static TypedConstraint^ GetManaged(btTypedConstraint* native);
 
-	public:
 		!TypedConstraint();
-	protected:
 		~TypedConstraint();
 
 	public:
@@ -224,6 +200,7 @@ namespace BulletSharp
 		int CalculateSerializeBufferSize();
 #endif
 		void EnableFeedback(bool needsFeedback);
+		static RigidBody^ GetFixedBody();
 		void GetInfo1(ConstraintInfo1^ info);
 		void GetInfo2(ConstraintInfo2^ info);
 		btScalar GetParam(ConstraintParam num, int axis);
@@ -265,11 +242,6 @@ namespace BulletSharp
 		property bool IsDisposed
 		{
 			virtual bool get();
-		}
-
-		property RigidBody^ FixedBody
-		{
-			static RigidBody^ get();
 		}
 
 		property bool IsEnabled
@@ -345,9 +317,7 @@ namespace BulletSharp
 	internal:
 		AngularLimit(btAngularLimit* native, bool preventDelete);
 
-	public:
 		!AngularLimit();
-	protected:
 		~AngularLimit();
 
 	public:

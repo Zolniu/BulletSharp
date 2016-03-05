@@ -8,6 +8,15 @@ namespace BulletSharp
 	ref class IntArray;
 	ref class RigidBody;
 
+	[Flags]
+	public enum class SixDofFlags
+	{
+		None = 0,
+		CfmNormal = BT_6DOF_FLAGS_CFM_NORM,
+		CfmStop = BT_6DOF_FLAGS_CFM_STOP,
+		ErpStop = BT_6DOF_FLAGS_ERP_STOP
+	};
+
 	public ref class RotationalLimitMotor
 	{
 	internal:
@@ -19,9 +28,7 @@ namespace BulletSharp
 	internal:
 		RotationalLimitMotor(btRotationalLimitMotor* native, bool preventDelete);
 
-	public:
 		!RotationalLimitMotor();
-	protected:
 		~RotationalLimitMotor();
 
 	public:
@@ -150,9 +157,7 @@ namespace BulletSharp
 	internal:
 		TranslationalLimitMotor(btTranslationalLimitMotor* native, bool preventDelete);
 
-	public:
 		!TranslationalLimitMotor();
-	protected:
 		~TranslationalLimitMotor();
 
 	public:
@@ -272,14 +277,12 @@ namespace BulletSharp
 		void CalcAnchorPos();
 		void CalculateTransforms(Matrix transA, Matrix transB);
 		void CalculateTransforms();
-
-		int GetLimitMotorInfo2(RotationalLimitMotor^ limot, Matrix transA, Matrix transB,
+		int GetLimitMotorInfo2(RotationalLimitMotor^ limitMotor, Matrix transA, Matrix transB,
 			Vector3 linVelA, Vector3 linVelB, Vector3 angVelA, Vector3 angVelB, ConstraintInfo2^ info,
 			int row, Vector3 ax1, int rotational, int rotAllowed);
-		int GetLimitMotorInfo2(RotationalLimitMotor^ limot, Matrix transA, Matrix transB,
+		int GetLimitMotorInfo2(RotationalLimitMotor^ limitMotor, Matrix transA, Matrix transB,
 			Vector3 linVelA, Vector3 linVelB, Vector3 angVelA, Vector3 angVelB, ConstraintInfo2^ info,
 			int row, Vector3 ax1, int rotational);
-
 		btScalar GetAngle(int axisIndex);
 		Vector3 GetAxis(int axisIndex);
 		void GetInfo1NonVirtual(ConstraintInfo1^ info);
@@ -292,7 +295,7 @@ namespace BulletSharp
 		void SetFrames(Matrix frameA, Matrix frameB);
 		void SetLimit(int axis, btScalar lo, btScalar hi);
 		bool TestAngularLimitMotor(int axisIndex);
-		void UpdateRHS(btScalar timeStep);
+		void UpdateRhs(btScalar timeStep);
 
 		property Vector3 AngularLowerLimit
 		{
@@ -314,6 +317,11 @@ namespace BulletSharp
 		property Matrix CalculatedTransformB
 		{
 			Matrix get();
+		}
+
+		property SixDofFlags Flags
+		{
+			SixDofFlags get();
 		}
 
 		property Matrix FrameOffsetA
@@ -349,6 +357,12 @@ namespace BulletSharp
 		{
 			bool get();
 			void set(bool frameOffsetOnOff);
+		}
+
+		property bool UseLinearReferenceFrameA
+		{
+			bool get();
+			void set(bool linearReferenceFrameA);
 		}
 	};
 };

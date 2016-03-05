@@ -18,15 +18,18 @@ BvhTriangleMeshShape::BvhTriangleMeshShape(btBvhTriangleMeshShape* native)
 
 BvhTriangleMeshShape::BvhTriangleMeshShape(StridingMeshInterface^ meshInterface, bool useQuantizedAabbCompression,
 	bool buildBvh)
-	: TriangleMeshShape(new btBvhTriangleMeshShape(meshInterface->_native, useQuantizedAabbCompression,
-		buildBvh))
+	: TriangleMeshShape(0)
 {
+	UnmanagedPointer = new btBvhTriangleMeshShape(meshInterface->_native, useQuantizedAabbCompression, buildBvh);
+
 	_meshInterface = meshInterface;
 }
 
 BvhTriangleMeshShape::BvhTriangleMeshShape(StridingMeshInterface^ meshInterface, bool useQuantizedAabbCompression)
-	: TriangleMeshShape(new btBvhTriangleMeshShape(meshInterface->_native, useQuantizedAabbCompression))
+	: TriangleMeshShape(0)
 {
+	UnmanagedPointer = new btBvhTriangleMeshShape(meshInterface->_native, useQuantizedAabbCompression);
+
 	_meshInterface = meshInterface;
 }
 
@@ -89,18 +92,10 @@ BvhTriangleMeshShape::BvhTriangleMeshShape(StridingMeshInterface^ meshInterface,
 void BvhTriangleMeshShape::BuildOptimizedBvh()
 {
 	Native->buildOptimizedBvh();
+	_optimizedBvh = nullptr;
 }
 
 void BvhTriangleMeshShape::PartialRefitTree(Vector3% aabbMin, Vector3% aabbMax)
-{
-	VECTOR3_CONV(aabbMin);
-	VECTOR3_CONV(aabbMax);
-	Native->partialRefitTree(VECTOR3_USE(aabbMin), VECTOR3_USE(aabbMax));
-	VECTOR3_DEL(aabbMin);
-	VECTOR3_DEL(aabbMax);
-}
-
-void BvhTriangleMeshShape::PartialRefitTree(Vector3 aabbMin, Vector3 aabbMax)
 {
 	VECTOR3_CONV(aabbMin);
 	VECTOR3_CONV(aabbMax);
@@ -124,21 +119,6 @@ void BvhTriangleMeshShape::PerformConvexcast(TriangleCallback^ callback, Vector3
 	VECTOR3_DEL(boxMax);
 }
 
-void BvhTriangleMeshShape::PerformConvexcast(TriangleCallback^ callback, Vector3 boxSource,
-	Vector3 boxTarget, Vector3 boxMin, Vector3 boxMax)
-{
-	VECTOR3_CONV(boxSource);
-	VECTOR3_CONV(boxTarget);
-	VECTOR3_CONV(boxMin);
-	VECTOR3_CONV(boxMax);
-	Native->performConvexcast(callback->_native, VECTOR3_USE(boxSource), VECTOR3_USE(boxTarget),
-		VECTOR3_USE(boxMin), VECTOR3_USE(boxMax));
-	VECTOR3_DEL(boxSource);
-	VECTOR3_DEL(boxTarget);
-	VECTOR3_DEL(boxMin);
-	VECTOR3_DEL(boxMax);
-}
-
 void BvhTriangleMeshShape::PerformRaycast(TriangleCallback^ callback, Vector3% raySource,
 	Vector3% rayTarget)
 {
@@ -149,26 +129,7 @@ void BvhTriangleMeshShape::PerformRaycast(TriangleCallback^ callback, Vector3% r
 	VECTOR3_DEL(rayTarget);
 }
 
-void BvhTriangleMeshShape::PerformRaycast(TriangleCallback^ callback, Vector3 raySource,
-	Vector3 rayTarget)
-{
-	VECTOR3_CONV(raySource);
-	VECTOR3_CONV(rayTarget);
-	Native->performRaycast(callback->_native, VECTOR3_USE(raySource), VECTOR3_USE(rayTarget));
-	VECTOR3_DEL(raySource);
-	VECTOR3_DEL(rayTarget);
-}
-
 void BvhTriangleMeshShape::RefitTree(Vector3% aabbMin, Vector3% aabbMax)
-{
-	VECTOR3_CONV(aabbMin);
-	VECTOR3_CONV(aabbMax);
-	Native->refitTree(VECTOR3_USE(aabbMin), VECTOR3_USE(aabbMax));
-	VECTOR3_DEL(aabbMin);
-	VECTOR3_DEL(aabbMax);
-}
-
-void BvhTriangleMeshShape::RefitTree(Vector3 aabbMin, Vector3 aabbMax)
 {
 	VECTOR3_CONV(aabbMin);
 	VECTOR3_CONV(aabbMax);
@@ -191,6 +152,7 @@ void BvhTriangleMeshShape::SerializeSingleTriangleInfoMap(BulletSharp::Serialize
 
 void BvhTriangleMeshShape::SetOptimizedBvh(BulletSharp::OptimizedBvh^ bvh, Vector3 localScaling)
 {
+	System::Diagnostics::Debug::Assert(!OwnsBvh);
 	VECTOR3_CONV(localScaling);
 	Native->setOptimizedBvh((btOptimizedBvh*)GetUnmanagedNullable(bvh), VECTOR3_USE(localScaling));
 	VECTOR3_DEL(localScaling);
@@ -206,20 +168,18 @@ void BvhTriangleMeshShape_SetOptimizedBvh(btBvhTriangleMeshShape* shape, btOptim
 
 OptimizedBvh^ BvhTriangleMeshShape::OptimizedBvh::get()
 {
-	if (!_optimizedBvh)
+	if (!_optimizedBvh && OwnsBvh)
 	{
 		btOptimizedBvh* optimizedBvh = Native->getOptimizedBvh();
-		if (optimizedBvh)
-		{
-			_optimizedBvh = gcnew BulletSharp::OptimizedBvh(optimizedBvh);
-		}
+		_optimizedBvh = gcnew BulletSharp::OptimizedBvh(optimizedBvh, true);
 	}
 	return _optimizedBvh;
 }
 void BvhTriangleMeshShape::OptimizedBvh::set(BulletSharp::OptimizedBvh^ value)
 {
-	_optimizedBvh = value;
+	System::Diagnostics::Debug::Assert(!OwnsBvh);
 	BvhTriangleMeshShape_SetOptimizedBvh(Native, (btOptimizedBvh*)GetUnmanagedNullable(value));
+	_optimizedBvh = value;
 }
 
 bool BvhTriangleMeshShape::OwnsBvh::get()

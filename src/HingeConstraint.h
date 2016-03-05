@@ -6,6 +6,16 @@ namespace BulletSharp
 {
 	ref class RigidBody;
 
+	[Flags]
+	public enum class HingeFlags
+	{
+		None = 0,
+		CfmStop = BT_HINGE_FLAGS_CFM_STOP,
+		ErpStop = BT_HINGE_FLAGS_ERP_STOP,
+		CfmNormal = BT_HINGE_FLAGS_CFM_NORM,
+		ErpNormal = BT_HINGE_FLAGS_ERP_NORM
+	};
+
 	public ref class HingeConstraint : TypedConstraint
 	{
 	internal:
@@ -42,10 +52,10 @@ namespace BulletSharp
 		void SetLimit(btScalar low, btScalar high, btScalar softness, btScalar biasFactor);
 		void SetLimit(btScalar low, btScalar high, btScalar softness);
 		void SetLimit(btScalar low, btScalar high);
-		void SetMotorTarget(btScalar targetAngle, btScalar dt);
-		void SetMotorTarget(Quaternion qAinB, btScalar dt);
+		void SetMotorTarget(btScalar targetAngle, btScalar deltaTime);
+		void SetMotorTarget(Quaternion qAinB, btScalar deltaTime);
 		void TestLimit(Matrix transA, Matrix transB);
-		void UpdateRHS(btScalar timeStep);
+		void UpdateRhs(btScalar timeStep);
 
 		property Matrix AFrame
 		{
@@ -67,6 +77,11 @@ namespace BulletSharp
 		{
 			bool get();
 			void set(bool value);
+		}
+
+		property HingeFlags Flags
+		{
+			HingeFlags get();
 		}
 
 		property Matrix FrameOffsetA
@@ -91,7 +106,22 @@ namespace BulletSharp
 			btScalar get();
 		}
 
+		property btScalar LimitBiasFactor
+		{
+			btScalar get();
+		}
+
+		property btScalar LimitRelaxationFactor
+		{
+			btScalar get();
+		}
+
 		property btScalar LimitSign
+		{
+			btScalar get();
+		}
+
+		property btScalar LimitSoftness
 		{
 			btScalar get();
 		}
@@ -110,6 +140,7 @@ namespace BulletSharp
 		property btScalar MotorTargetVelocity
 		{
 			btScalar get();
+			void set(btScalar motorTargetVelocity);
 		}
 
 		property int SolveLimit
@@ -127,13 +158,16 @@ namespace BulletSharp
 			bool get();
 			void set(bool frameOffsetOnOff);
 		}
+
+		property bool UseReferenceFrameA
+		{
+			bool get();
+			void set(bool useReferenceFrameA);
+		}
 	};
 
 	public ref class HingeAccumulatedAngleConstraint : HingeConstraint
 	{
-	internal:
-		HingeAccumulatedAngleConstraint(btHingeAccumulatedAngleConstraint* native);
-
 	public:
 		HingeAccumulatedAngleConstraint(RigidBody^ rigidBodyA, RigidBody^ rigidBodyB,
 			Vector3 pivotInA, Vector3 pivotInB, Vector3 axisInA, Vector3 axisInB,

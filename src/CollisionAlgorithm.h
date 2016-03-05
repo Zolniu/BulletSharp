@@ -17,11 +17,9 @@ namespace BulletSharp
 		btCollisionAlgorithmConstructionInfo* _native;
 
 	private:
-		Dispatcher^ _dispatcher;
+		Dispatcher^ _dispatcher1;
 
-	public:
 		!CollisionAlgorithmConstructionInfo();
-	protected:
 		~CollisionAlgorithmConstructionInfo();
 
 	public:
@@ -54,9 +52,7 @@ namespace BulletSharp
 		CollisionAlgorithm(btCollisionAlgorithm* native, bool preventDelete);
 		static CollisionAlgorithm^ GetManaged(btCollisionAlgorithm* native);
 
-	public:
 		!CollisionAlgorithm();
-	protected:
 		~CollisionAlgorithm();
 
 	public:
