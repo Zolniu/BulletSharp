@@ -10,11 +10,13 @@ namespace BulletSharp
 
 	public ref class CompoundShapeChild
 	{
+	internal:
+		btCompoundShapeChild* _native;
+
 	private:
 		CollisionShape^ _childShape;
 
 	internal:
-		btCompoundShapeChild* _native;
 		CompoundShapeChild(btCompoundShapeChild* native, CollisionShape^ shape);
 
 	public:
@@ -35,7 +37,6 @@ namespace BulletSharp
 			BroadphaseNativeType get();
 			void set(BroadphaseNativeType value);
 		}
-
 #ifndef DISABLE_DBVT
 		property DbvtNode^ Node
 		{
@@ -53,28 +54,33 @@ namespace BulletSharp
 
 	public ref class CompoundShape : CollisionShape
 	{
-	private:
 		CompoundShapeChildArray^ _childList;
 
 	internal:
 		CompoundShape(btCompoundShape* native);
 
 	public:
+		CompoundShape(bool enableDynamicAabbTree, int initialChildCapacity);
 		CompoundShape(bool enableDynamicAabbTree);
 		CompoundShape();
 
-		void AddChildShape(Matrix% localTransform, CollisionShape^ shape);
+		void AddChildShapeRef(Matrix% localTransform, CollisionShape^ shape);
 		void AddChildShape(Matrix localTransform, CollisionShape^ shape);
-		void CalculatePrincipalAxisTransform(array<btScalar>^ masses, Matrix% principal, [Out] Vector3% inertia);
+		void CalculatePrincipalAxisTransform(array<btScalar>^ masses, Matrix% principal,
+			[Out] Vector3% inertia);
 		void CreateAabbTreeFromChildren();
 		CollisionShape^ GetChildShape(int index);
 		Matrix GetChildTransform(int index);
 		void RecalculateLocalAabb();
 		void RemoveChildShape(CollisionShape^ shape);
-		void RemoveChildShapeByIndex(int childShapeindex);
+		void RemoveChildShapeByIndex(int childShapeIndex);
 		void UpdateChildTransform(int childIndex, Matrix newChildTransform, bool shouldRecalculateLocalAabb);
 		void UpdateChildTransform(int childIndex, Matrix newChildTransform);
 
+	internal:
+		CollisionShape^ GetChildShapeByPtr(btCollisionShape* shapePtr, int index);
+
+	public:
 		property CompoundShapeChildArray^ ChildList
 		{
 			CompoundShapeChildArray^ get();

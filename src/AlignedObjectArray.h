@@ -48,9 +48,7 @@ namespace BulletSharp
 		AlignedObjectArray(void* alignedObjectArray, bool ownsObject);
 		AlignedObjectArray(void* alignedObjectArray);
 
-	public:
 		!AlignedObjectArray();
-	protected:
 		~AlignedObjectArray();
 
 	public:
@@ -58,8 +56,8 @@ namespace BulletSharp
 		virtual void Clear() = 0;
 		virtual bool Contains(T item);
 		virtual void CopyTo(array<T>^ array, int arrayIndex) = 0;
-		virtual System::Collections::IEnumerator^ GetEnumerator() = System::Collections::IEnumerable::GetEnumerator;
-		virtual IEnumerator<T>^ GetSpecializedEnumerator() = IEnumerable<T>::GetEnumerator;
+		virtual System::Collections::IEnumerator^ GetObjectEnumerator() = System::Collections::IEnumerable::GetEnumerator;
+		virtual IEnumerator<T>^ GetEnumerator() = IEnumerable<T>::GetEnumerator;
 		virtual int IndexOf(T item);
 		virtual void Insert(int index, T item);
 		virtual void PopBack() = 0;
@@ -222,11 +220,12 @@ namespace BulletSharp
 		virtual void Clear() override;
 		virtual bool Contains(CollisionObject^ item) override;
 		virtual void CopyTo(array<CollisionObject^>^ array, int arrayIndex) override;
-		virtual System::Collections::IEnumerator^ GetEnumerator() override;
-		virtual IEnumerator<CollisionObject^>^ GetSpecializedEnumerator() override;
+		virtual System::Collections::IEnumerator^ GetObjectEnumerator() override;
+		virtual IEnumerator<CollisionObject^>^ GetEnumerator() override;
 		virtual int IndexOf(CollisionObject^ item) override;
 		virtual void PopBack() override;
 		virtual bool Remove(CollisionObject^ item) override;
+		virtual void RemoveAt(int index) override;
 		virtual void Swap(int index0, int index1) override;
 
 		property int Capacity
@@ -833,8 +832,6 @@ namespace BulletSharp
 			AlignedSoftBodyArray(btSoftBody::tSoftBodyArray* softBodyArray);
 
 		public:
-			AlignedSoftBodyArray();
-
 			virtual void Add(SoftBody^ softBody) override;
 			virtual void Clear() override;
 			virtual bool Contains(SoftBody^ softBody) override;

@@ -8,18 +8,15 @@ namespace BulletSharp
 
 	public ref class Face
 	{
+		ScalarArray^ _plane;
+		AlignedIntArray^ _indices;
+
 	internal:
 		btFace* _native;
 
 		Face(btFace* native);
 
-	private:
-		ScalarArray^ _plane;
-		AlignedIntArray^ _indices;
-
-	public:
 		!Face();
-	protected:
 		~Face();
 
 	public:
@@ -49,22 +46,21 @@ namespace BulletSharp
 	internal:
 		btConvexPolyhedron* _native;
 
-		ConvexPolyhedron(btConvexPolyhedron* native);
-
 	private:
 		AlignedVector3Array^ _uniqueEdges;
 		AlignedVector3Array^ _vertices;
 
-	public:
+	internal:
+		ConvexPolyhedron(btConvexPolyhedron* native);
+
 		!ConvexPolyhedron();
-	protected:
 		~ConvexPolyhedron();
 
 	public:
 		ConvexPolyhedron();
 
 		void Initialize();
-		void Project(Matrix% transform, Vector3% direction, [Out] btScalar% minProj, [Out] btScalar% maxProj, [Out] Vector3% witnesPtMin,
+		void ProjectRef(Matrix% transform, Vector3% direction, [Out] btScalar% minProj, [Out] btScalar% maxProj, [Out] Vector3% witnesPtMin,
 			[Out] Vector3% witnesPtMax);
 		void Project(Matrix transform, Vector3 direction, [Out] btScalar% minProj, [Out] btScalar% maxProj, [Out] Vector3% witnesPtMin,
 			[Out] Vector3% witnesPtMax);

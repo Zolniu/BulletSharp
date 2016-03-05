@@ -83,7 +83,7 @@ Point2PointConstraint::Point2PointConstraint(RigidBody^ rigidBodyA, Vector3 pivo
 	VECTOR3_DEL(pivotInA);
 
 	_rigidBodyA = rigidBodyA;
-	_rigidBodyB = FixedBody;
+	_rigidBodyB = GetFixedBody();
 }
 
 void Point2PointConstraint::GetInfo1NonVirtual(ConstraintInfo1^ info)
@@ -104,6 +104,11 @@ void Point2PointConstraint::GetInfo2NonVirtual(ConstraintInfo2^ info, Matrix bod
 void Point2PointConstraint::UpdateRhs(btScalar timeStep)
 {
 	Native->updateRHS(timeStep);
+}
+
+Point2PointFlags Point2PointConstraint::Flags::get()
+{
+	return (Point2PointFlags) Native->getFlags();
 }
 
 Vector3 Point2PointConstraint::PivotInA::get()
@@ -132,9 +137,9 @@ ConstraintSetting^ Point2PointConstraint::Setting::get()
 {
 	return gcnew ConstraintSetting(&Native->m_setting, true);
 }
-void Point2PointConstraint::Setting::set(ConstraintSetting^ setting)
+void Point2PointConstraint::Setting::set(ConstraintSetting^ value)
 {
-	Native->m_setting = *setting->_native;
+	Native->m_setting = *value->_native;
 }
 
 #endif

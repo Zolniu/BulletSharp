@@ -10,14 +10,12 @@ namespace BulletSharp
 	{
 	internal:
 		btDefaultCollisionConstructionInfo* _native;
-		
+
 	private:
 		PoolAllocator^ _collisionAlgorithmPool;
 		PoolAllocator^ _persistentManifoldPool;
 
-	public:
 		!DefaultCollisionConstructionInfo();
-	protected:
 		~DefaultCollisionConstructionInfo();
 
 	public:
@@ -66,7 +64,8 @@ namespace BulletSharp
 	public ref class DefaultCollisionConfiguration : CollisionConfiguration
 	{
 	internal:
-		DefaultCollisionConfiguration(btDefaultCollisionConfiguration* native);
+		DefaultCollisionConfiguration(btDefaultCollisionConfiguration* native, PoolAllocator^ collisionAlgorithmPool,
+			PoolAllocator^ persistentManifoldPool);
 
 	private:
 		VoronoiSimplexSolver^ _simplexSolver;
@@ -75,6 +74,8 @@ namespace BulletSharp
 		DefaultCollisionConfiguration(DefaultCollisionConstructionInfo^ constructionInfo);
 		DefaultCollisionConfiguration();
 
+		virtual CollisionAlgorithmCreateFunc^ GetCollisionAlgorithmCreateFunc(BroadphaseNativeType proxyType0,
+			BroadphaseNativeType proxyType1) override;
 		void SetConvexConvexMultipointIterations(int numPerturbationIterations, int minimumPointsPerturbationThreshold);
 		void SetConvexConvexMultipointIterations(int numPerturbationIterations);
 		void SetConvexConvexMultipointIterations();

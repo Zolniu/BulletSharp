@@ -7,11 +7,6 @@
 
 #define Native static_cast<btMLCPSolver*>(_native)
 
-MlcpSolver::MlcpSolver(btMLCPSolver* native)
-	: SequentialImpulseConstraintSolver(native)
-{
-}
-
 MlcpSolver::MlcpSolver(MlcpSolverInterface^ solver)
 	: SequentialImpulseConstraintSolver(new btMLCPSolver(solver->_native))
 {
@@ -22,15 +17,6 @@ void MlcpSolver::SetMLCPSolver(MlcpSolverInterface^ solver)
 {
 	Native->setMLCPSolver(solver->_native);
 	_mlcpSolver = solver;
-}
-
-btScalar MlcpSolver::Cfm::get()
-{
-	return Native->getCfm();
-}
-void MlcpSolver::Cfm::set(btScalar cfm)
-{
-	Native->setCfm(cfm);
 }
 
 int MlcpSolver::NumFallbacks::get()

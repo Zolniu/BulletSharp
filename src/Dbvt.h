@@ -76,10 +76,11 @@ namespace BulletSharp
 	internal:
 		btDbvtNode* _native;
 
-		DbvtNode(btDbvtNode* native);
-
 	private:
 		DbvtNode^ _parent;
+
+	internal:
+		DbvtNode(btDbvtNode* native);
 
 	public:
 		//DbvtNode();
@@ -133,9 +134,7 @@ namespace BulletSharp
 
 			IClone(btDbvt::IClone* native);
 
-		public:
 			!IClone();
-		protected:
 			~IClone();
 
 		public:
@@ -156,9 +155,7 @@ namespace BulletSharp
 
 			ICollide(btDbvt::ICollide* native);
 
-		public:
 			!ICollide();
-		protected:
 			~ICollide();
 
 		public:
@@ -181,9 +178,7 @@ namespace BulletSharp
 
 			IWriter(btDbvt::IWriter* native);
 
-		public:
 			!IWriter();
-		protected:
 			~IWriter();
 
 		public:
@@ -307,9 +302,7 @@ namespace BulletSharp
 	internal:
 		Dbvt(btDbvt* native, bool preventDelete);
 
-	public:
 		!Dbvt();
-	protected:
 		~Dbvt();
 
 	public:
@@ -350,12 +343,12 @@ namespace BulletSharp
 			ICollide^ policy);
 #endif
 		void Remove(DbvtNode^ leaf);
-		bool Update(DbvtNode^ leaf, DbvtVolume^ volume, btScalar margin);
-		bool Update(DbvtNode^ leaf, DbvtVolume^ volume, Vector3 velocity);
-		bool Update(DbvtNode^ leaf, DbvtVolume^ volume, Vector3 velocity, btScalar margin);
 		void Update(DbvtNode^ leaf, DbvtVolume^ volume);
 		void Update(DbvtNode^ leaf, int lookahead);
 		void Update(DbvtNode^ leaf);
+		bool Update(DbvtNode^ leaf, DbvtVolume^ volume, btScalar margin);
+		bool Update(DbvtNode^ leaf, DbvtVolume^ volume, Vector3 velocity);
+		bool Update(DbvtNode^ leaf, DbvtVolume^ volume, Vector3 velocity, btScalar margin);
 		void Write(IWriter^ iwriter);
 
 		property DbvtNode^ Free

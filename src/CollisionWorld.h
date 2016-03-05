@@ -31,9 +31,7 @@ namespace BulletSharp
 	private:
 		bool _preventDelete;
 
-	public:
 		!LocalShapeInfo();
-	protected:
 		~LocalShapeInfo();
 
 	public:
@@ -64,9 +62,7 @@ namespace BulletSharp
 	internal:
 		LocalRayResult(btCollisionWorld::LocalRayResult* native, bool preventDelete);
 
-	public:
 		!LocalRayResult();
-	protected:
 		~LocalRayResult();
 
 	public:
@@ -100,12 +96,22 @@ namespace BulletSharp
 
 	public ref class RayResultCallback abstract
 	{
+	private:
+		[UnmanagedFunctionPointer(CallingConvention::Cdecl), SuppressUnmanagedCodeSecurity]
+		delegate float AddSingleResultUnmanagedDelegate(IntPtr rayResult, bool normalInWorldSpace);
+		[UnmanagedFunctionPointer(CallingConvention::Cdecl), SuppressUnmanagedCodeSecurity]
+		delegate bool NeedsCollisionUnmanagedDelegate(IntPtr proxy0);
+
+		AddSingleResultUnmanagedDelegate^ _addSingleResult;
+		NeedsCollisionUnmanagedDelegate^ _needsCollision;
+
+		float AddSingleResultUnmanaged(IntPtr rayResult, bool normalInWorldSpace);
+		bool NeedsCollisionUnmanaged(IntPtr proxy0);
+
 	internal:
 		btCollisionWorld::RayResultCallback* _native;
 
-	public:
 		!RayResultCallback();
-	protected:
 		~RayResultCallback();
 
 	protected:
@@ -156,14 +162,19 @@ namespace BulletSharp
 		}
 	};
 
+	typedef btScalar (*pRayResultCallback_AddSingleResult)(btCollisionWorld::LocalRayResult& rayResult,
+		bool normalInWorldSpace);
+	typedef bool (*pRayResultCallback_NeedsCollision)(btBroadphaseProxy* proxy0);
+
 	class RayResultCallbackWrapper : public btCollisionWorld::RayResultCallback
 	{
 	private:
-		void* _callback;
+		pRayResultCallback_AddSingleResult _addSingleResultCallback;
+		pRayResultCallback_NeedsCollision _needsCollisionCallback;
 
 	public:
-		RayResultCallbackWrapper(BulletSharp::RayResultCallback^ callback);
-		~RayResultCallbackWrapper();
+		RayResultCallbackWrapper(pRayResultCallback_AddSingleResult addSingleResultCallback,
+			pRayResultCallback_NeedsCollision needsCollisionCallback);
 
 		virtual bool needsCollision(btBroadphaseProxy* proxy0) const;
 		virtual btScalar addSingleResult(btCollisionWorld::LocalRayResult& rayResult, bool normalInWorldSpace);
@@ -171,7 +182,6 @@ namespace BulletSharp
 
 	public ref class AllHitsRayResultCallback : RayResultCallback
 	{
-	private:
 		List<BulletSharp::CollisionObject^>^ _collisionObjects;
 		List<btScalar>^ _hitFractions;
 		List<Vector3>^ _hitNormalWorld;
@@ -229,9 +239,7 @@ namespace BulletSharp
 	internal:
 		LocalConvexResult(btCollisionWorld::LocalConvexResult* native, bool preventDelete);
 
-	public:
 		!LocalConvexResult();
-	protected:
 		~LocalConvexResult();
 
 	public:
@@ -274,10 +282,9 @@ namespace BulletSharp
 	internal:
 		btCollisionWorld::ConvexResultCallback* _native;
 
-	public:
-		!ConvexResultCallback();
-	protected:
-		~ConvexResultCallback();
+	private:
+		btScalar _closestHitFraction;
+		CollisionFilterGroups _collisionFilterGroup, _collisionFilterMask;
 
 	protected:
 		ConvexResultCallback();
@@ -308,17 +315,13 @@ namespace BulletSharp
 		{
 			bool get();
 		}
-
-		property bool IsDisposed
-		{
-			virtual bool get();
-		}
 	};
 
 	class ConvexResultCallbackWrapper : public btCollisionWorld::ConvexResultCallback
 	{
 	private:
-		void* _callback;
+		GCHandle _callback;
+		void* _callbackPtr;
 
 	public:
 		ConvexResultCallbackWrapper(BulletSharp::ConvexResultCallback^ callback);
@@ -330,7 +333,6 @@ namespace BulletSharp
 
 	public ref class ClosestConvexResultCallback : ConvexResultCallback
 	{
-	private:
 		Vector3 _convexFromWorld;
 		Vector3 _convexToWorld;
 		CollisionObject^ _hitCollisionObject;
@@ -338,8 +340,8 @@ namespace BulletSharp
 		Vector3 _hitPointWorld;
 
 	public:
-		ClosestConvexResultCallback(Vector3 convexFromWorld, Vector3 convexToWorld);
-		//ClosestConvexResultCallback(Vector3% convexFromWorld, Vector3% convexToWorld); // This is ambiguous to the above constructor in C++/CLI
+		ClosestConvexResultCallback(Vector3% convexFromWorld, Vector3% convexToWorld);
+		ClosestConvexResultCallback();
 
 		virtual btScalar AddSingleResult(LocalConvexResult^ convexResult, bool normalInWorldSpace) override;
 
@@ -376,14 +378,14 @@ namespace BulletSharp
 
 	public ref class ClosestRayResultCallback : RayResultCallback
 	{
-	private:
 		Vector3 _hitNormalWorld;
 		Vector3 _hitPointWorld;
 		Vector3 _rayFromWorld;
 		Vector3 _rayToWorld;
 
 	public:
-		ClosestRayResultCallback(Vector3 rayFromWorld, Vector3 rayToWorld);
+		ClosestRayResultCallback();
+		//ClosestRayResultCallback(Vector3 rayFromWorld, Vector3 rayToWorld);
 		ClosestRayResultCallback(Vector3% rayFromWorld, Vector3% rayToWorld);
 
 		virtual btScalar AddSingleResult(LocalRayResult^ rayResult, bool normalInWorldSpace) override;
@@ -415,13 +417,8 @@ namespace BulletSharp
 
 	public ref class ContactResultCallback abstract
 	{
-	internal:
-		ContactResultCallbackWrapper* _native;
-
-	public:
-		!ContactResultCallback();
-	protected:
-		~ContactResultCallback();
+	private:
+		CollisionFilterGroups _collisionFilterGroup, _collisionFilterMask;
 
 	protected:
 		ContactResultCallback();
@@ -441,11 +438,6 @@ namespace BulletSharp
 		{
 			CollisionFilterGroups get();
 			void set(CollisionFilterGroups value);
-		}
-
-		property bool IsDisposed
-		{
-			virtual bool get();
 		}
 	};
 
@@ -468,24 +460,24 @@ namespace BulletSharp
 	{
 	internal:
 		btCollisionWorld* _native;
-		CollisionWorld(btCollisionWorld* native);
 
 	private:
 		DispatcherInfo^ _dispatchInfo;
 		Dispatcher^ _dispatcher;
 
 	protected:
-		AlignedCollisionObjectArray^ _collisionObjectArray;
 		BroadphaseInterface^ _broadphase;
+		AlignedCollisionObjectArray^ _collisionObjectArray;
 
 #ifndef DISABLE_DEBUGDRAW
 	internal:
 		IDebugDraw^ _debugDrawer;
 #endif
 
-	public:
+	internal:
+		CollisionWorld(btCollisionWorld* native);
+
 		!CollisionWorld();
-	protected:
 		~CollisionWorld();
 
 	public:
@@ -538,6 +530,7 @@ namespace BulletSharp
 			void set(IDebugDraw^ debugDrawer);
 		}
 #endif
+
 		property Dispatcher^ Dispatcher
 		{
 			BulletSharp::Dispatcher^ get();

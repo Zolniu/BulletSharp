@@ -431,7 +431,7 @@ Generic6DofConstraint::Generic6DofConstraint(RigidBody^ rigidBodyB, Matrix frame
 	TRANSFORM_DEL(frameInB);
 
 	_angularLimits = gcnew array<RotationalLimitMotor^>(3);
-	_rigidBodyA = FixedBody;
+	_rigidBodyA = GetFixedBody();
 	_rigidBodyB = rigidBodyB;
 }
 
@@ -508,14 +508,18 @@ btScalar Generic6DofConstraint::GetAngle(int axisIndex)
 }
 
 #pragma managed(push, off)
-btVector3* Generic6DofConstraint_GetAxis(btGeneric6DofConstraint* constraint, int axisIndex)
+void Generic6DofConstraint_GetAxis(btGeneric6DofConstraint* constraint, int axis_index, btVector3* axis)
 {
-	return &constraint->getAxis(axisIndex);
+	axis = &constraint->getAxis(axis_index);
 }
 #pragma managed(pop)
 Vector3 Generic6DofConstraint::GetAxis(int axisIndex)
 {
-	return Math::BtVector3ToVector3(Generic6DofConstraint_GetAxis(Native, axisIndex));
+	btVector3* axisTemp = ALIGNED_NEW(btVector3);
+	Generic6DofConstraint_GetAxis(Native, axisIndex, axisTemp);
+	Vector3 ret = Math::BtVector3ToVector3(axisTemp);
+	ALIGNED_FREE(axisTemp);
+	return ret;
 }
 
 void Generic6DofConstraint::GetInfo1NonVirtual(ConstraintInfo1^ info)
@@ -589,7 +593,7 @@ bool Generic6DofConstraint::TestAngularLimitMotor(int axisIndex)
 	return Native->testAngularLimitMotor(axisIndex);
 }
 
-void Generic6DofConstraint::UpdateRHS(btScalar timeStep)
+void Generic6DofConstraint::UpdateRhs(btScalar timeStep)
 {
 	Native->updateRHS(timeStep);
 }
@@ -632,6 +636,11 @@ Matrix Generic6DofConstraint::CalculatedTransformA::get()
 Matrix Generic6DofConstraint::CalculatedTransformB::get()
 {
 	return Math::BtTransformToMatrix(&Native->getCalculatedTransformB());
+}
+
+SixDofFlags Generic6DofConstraint::Flags::get()
+{
+	return (SixDofFlags) Native->getFlags();
 }
 
 Matrix Generic6DofConstraint::FrameOffsetA::get()
@@ -677,12 +686,7 @@ void Generic6DofConstraint::FrameOffsetB::set(Matrix value)
 	ALIGNED_FREE(a);
 #endif
 }
-/*
-void Generic6DofConstraint::Info1NonVirtual::get(btConstraintInfo1^ info)
-{
-	_native->getInfo1NonVirtual(info->_native);
-}
-*/
+
 Vector3 Generic6DofConstraint::LinearLowerLimit::get()
 {
 	btVector3* limitTemp = ALIGNED_NEW(btVector3);
@@ -729,6 +733,15 @@ bool Generic6DofConstraint::UseFrameOffset::get()
 void Generic6DofConstraint::UseFrameOffset::set(bool frameOffsetOnOff)
 {
 	Native->setUseFrameOffset(frameOffsetOnOff);
+}
+
+bool Generic6DofConstraint::UseLinearReferenceFrameA::get()
+{
+	return Native->getUseLinearReferenceFrameA();
+}
+void Generic6DofConstraint::UseLinearReferenceFrameA::set(bool linearReferenceFrameA)
+{
+	Native->setUseLinearReferenceFrameA(linearReferenceFrameA);
 }
 
 #endif

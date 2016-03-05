@@ -50,18 +50,7 @@ RigidBodyConstructionInfo::RigidBodyConstructionInfo(btScalar mass, BulletSharp:
 	_collisionShape = collisionShape;
 	_motionState = motionState;
 }
-/*
-RigidBodyConstructionInfo::RigidBodyConstructionInfo(btScalar mass, BulletSharp::MotionState^ motionState, BulletSharp::CollisionShape^ collisionShape, Vector3% localInertia)
-{
-	VECTOR3_CONV(localInertia);
-	_native = RigidBody_GetUnmanagedConstructionInfoLocalInertia(mass,
-		GetUnmanagedNullable(motionState), GetUnmanagedNullable(collisionShape),
-		VECTOR3_PTR(localInertia));
-	VECTOR3_DEL(localInertia);
-	_collisionShape = collisionShape;
-	_motionState = motionState;
-}
-*/
+
 RigidBodyConstructionInfo::RigidBodyConstructionInfo(btScalar mass, BulletSharp::MotionState^ motionState, BulletSharp::CollisionShape^ collisionShape, Vector3 localInertia)
 {
 	VECTOR3_CONV(localInertia);
@@ -231,12 +220,6 @@ void RigidBodyConstructionInfo::StartWorldTransform::set(Matrix value)
 
 #define Native static_cast<btRigidBody*>(_native)
 
-RigidBody::RigidBody(btRigidBody* native)
-	: CollisionObject(native)
-{
-	_collisionShape = BulletSharp::CollisionShape::GetManaged(native->getCollisionShape());
-}
-
 RigidBody::RigidBody(RigidBodyConstructionInfo^ constructionInfo)
 	: CollisionObject(ALIGNED_NEW(btRigidBody) (*constructionInfo->_native))
 {
@@ -356,10 +339,10 @@ void RigidBody_ComputeGyroscopicImpulseImplicit_World(btRigidBody* body, btVecto
 	*ret = body->computeGyroscopicImpulseImplicit_World(dt);
 }
 #pragma managed(pop)
-Vector3 RigidBody::ComputeGyroscopicImpulseImplicitWorld(btScalar dt)
+Vector3 RigidBody::ComputeGyroscopicImpulseImplicitWorld(btScalar deltaTime)
 {
 	btVector3* retTemp = ALIGNED_NEW(btVector3);
-	RigidBody_ComputeGyroscopicImpulseImplicit_World(Native, retTemp, dt);
+	RigidBody_ComputeGyroscopicImpulseImplicit_World(Native, retTemp, deltaTime);
 	Vector3 ret = Math::BtVector3ToVector3(retTemp);
 	ALIGNED_FREE(retTemp);
 	return ret;

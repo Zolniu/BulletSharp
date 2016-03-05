@@ -14,12 +14,12 @@
 #include "ManifoldResult.h"
 
 GImpactCollisionAlgorithm::CreateFunc::CreateFunc(btGImpactCollisionAlgorithm::CreateFunc* native)
-	: CollisionAlgorithmCreateFunc(native)
+	: CollisionAlgorithmCreateFunc(native, true)
 {
 }
 
 GImpactCollisionAlgorithm::CreateFunc::CreateFunc()
-	: CollisionAlgorithmCreateFunc(new btGImpactCollisionAlgorithm::CreateFunc())
+	: CollisionAlgorithmCreateFunc(new btGImpactCollisionAlgorithm::CreateFunc(), false)
 {
 }
 
@@ -38,7 +38,7 @@ GImpactCollisionAlgorithm::GImpactCollisionAlgorithm(CollisionAlgorithmConstruct
 {
 }
 
-void GImpactCollisionAlgorithm::GImpactVsCompoundshape(CollisionObjectWrapper^ body0Wrap,
+void GImpactCollisionAlgorithm::GImpactVsCompoundShape(CollisionObjectWrapper^ body0Wrap,
 	CollisionObjectWrapper^ body1Wrap, GImpactShapeInterface^ shape0, CompoundShape^ shape1,
 	bool swapped)
 {

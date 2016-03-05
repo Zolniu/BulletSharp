@@ -13,15 +13,13 @@ namespace BulletSharp
 	internal:
 		Aabb(btAABB* native, bool preventDelete);
 
-	public:
 		!Aabb();
-	protected:
 		~Aabb();
 
 	public:
 		Aabb();
-		Aabb(Vector3 V1, Vector3 V2, Vector3 V3);
-		Aabb(Vector3 V1, Vector3 V2, Vector3 V3, btScalar margin);
+		Aabb(Vector3 v1, Vector3 v2, Vector3 v3);
+		Aabb(Vector3 v1, Vector3 v2, Vector3 v3, btScalar margin);
 		Aabb(Aabb^ other);
 		Aabb(Aabb^ other, btScalar margin);
 

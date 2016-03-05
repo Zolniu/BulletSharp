@@ -2,20 +2,18 @@
 
 namespace BulletSharp
 {
-	public ref class PoolAllocator : ITrackingDisposable
+	public ref class PoolAllocator
 	{
-	public:
-		virtual event EventHandler^ OnDisposing;
-		virtual event EventHandler^ OnDisposed;
-
 	internal:
 		btPoolAllocator* _native;
 
-		PoolAllocator(btPoolAllocator* native);
+	private:
+		bool _preventDelete;
 
-	public:
+	internal:
+		PoolAllocator(btPoolAllocator* native, bool preventDelete);
+
 		!PoolAllocator();
-	protected:
 		~PoolAllocator();
 
 	public:

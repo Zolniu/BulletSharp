@@ -19,9 +19,7 @@ namespace BulletSharp
 	internal:
 		RotationalLimitMotor2(btRotationalLimitMotor2* native, bool preventDelete);
 
-	public:
 		!RotationalLimitMotor2();
-	protected:
 		~RotationalLimitMotor2();
 
 	public:
@@ -131,10 +129,22 @@ namespace BulletSharp
 			void set(btScalar value);
 		}
 
+		property bool SpringDampingLimited
+		{
+			bool get();
+			void set(bool value);
+		}
+
 		property btScalar SpringStiffness
 		{
 			btScalar get();
 			void set(btScalar value);
+		}
+
+		property bool SpringStiffnessLimited
+		{
+			bool get();
+			void set(bool value);
 		}
 
 		property btScalar StopCfm
@@ -167,9 +177,7 @@ namespace BulletSharp
 	internal:
 		TranslationalLimitMotor2(btTranslationalLimitMotor2* native, bool preventDelete);
 
-	public:
 		!TranslationalLimitMotor2();
-	protected:
 		~TranslationalLimitMotor2();
 
 	public:
@@ -265,10 +273,20 @@ namespace BulletSharp
 			void set(Vector3 value);
 		}
 
+		property BoolArray^ SpringDampingLimited
+		{
+			BoolArray^ get();
+		}
+
 		property Vector3 SpringStiffness
 		{
 			Vector3 get();
 			void set(Vector3 value);
+		}
+
+		property BoolArray^ SpringStiffnessLimited
+		{
+			BoolArray^ get();
 		}
 
 		property Vector3 StopCfm
@@ -318,22 +336,13 @@ namespace BulletSharp
 		void EnableMotor(int index, bool onOff);
 		void EnableSpring(int index, bool onOff);
 		btScalar GetAngle(int axisIndex);
-		void GetAngularLowerLimit(Vector3 angularLower);
-		void GetAngularLowerLimitReversed(Vector3 angularLower);
-		void GetAngularUpperLimit(Vector3 angularUpper);
-		void GetAngularUpperLimitReversed(Vector3 angularUpper);
 		Vector3 GetAxis(int axisIndex);
-		void GetLinearLowerLimit(Vector3 linearLower);
-		void GetLinearUpperLimit(Vector3 linearUpper);
 		btScalar GetRelativePivotPosition(int axisIndex);
 		RotationalLimitMotor2^ GetRotationalLimitMotor(int index);
 		bool IsLimited(int limitIndex);
-		void SetAngularLowerLimit(Vector3 angularLower);
-		void SetAngularLowerLimitReversed(Vector3 angularLower);
-		void SetAngularUpperLimit(Vector3 angularUpper);
-		void SetAngularUpperLimitReversed(Vector3 angularUpper);
 		void SetAxis(Vector3 axis1, Vector3 axis2);
 		void SetBounce(int index, btScalar bounce);
+		void SetDamping(int index, btScalar damping, bool limitIfNeeded);
 		void SetDamping(int index, btScalar damping);
 		void SetEquilibriumPoint();
 		void SetEquilibriumPoint(int index, btScalar val);
@@ -341,13 +350,36 @@ namespace BulletSharp
 		void SetFrames(Matrix frameA, Matrix frameB);
 		void SetLimit(int axis, btScalar lo, btScalar hi);
 		void SetLimitReversed(int axis, btScalar lo, btScalar hi);
-		void SetLinearLowerLimit(Vector3 linearLower);
-		void SetLinearUpperLimit(Vector3 linearUpper);
 		void SetMaxMotorForce(int index, btScalar force);
 		void SetServo(int index, bool onOff);
 		void SetServoTarget(int index, btScalar target);
+		void SetStiffness(int index, btScalar stiffness, bool limitIfNeeded);
 		void SetStiffness(int index, btScalar stiffness);
 		void SetTargetVelocity(int index, btScalar velocity);
+
+		property Vector3 AngularLowerLimit
+		{
+			Vector3 get();
+			void set(Vector3 angularLower);
+		}
+
+		property Vector3 AngularLowerLimitReversed
+		{
+			Vector3 get();
+			void set(Vector3 angularLower);
+		}
+
+		property Vector3 AngularUpperLimit
+		{
+			Vector3 get();
+			void set(Vector3 angularUpper);
+		}
+
+		property Vector3 AngularUpperLimitReversed
+		{
+			Vector3 get();
+			void set(Vector3 angularUpper);
+		}
 
 		property Matrix CalculatedTransformA
 		{
@@ -367,6 +399,18 @@ namespace BulletSharp
 		property Matrix FrameOffsetB
 		{
 			Matrix get();
+		}
+
+		property Vector3 LinearLowerLimit
+		{
+			Vector3 get();
+			void set(Vector3 linearLower);
+		}
+
+		property Vector3 LinearUpperLimit
+		{
+			Vector3 get();
+			void set(Vector3 linearUpper);
 		}
 
 		property RotateOrder RotationOrder
