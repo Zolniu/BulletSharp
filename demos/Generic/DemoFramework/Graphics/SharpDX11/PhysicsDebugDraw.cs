@@ -12,7 +12,7 @@ namespace DemoFramework.SharpDX11
         InputAssemblerStage inputAssembler;
         InputLayout inputLayout;
         BufferDescription vertexBufferDesc;
-        PositionColored[] lineArray;
+        PositionColored[] lineArray = new PositionColored[0];
         Buffer vertexBuffer;
         VertexBufferBinding vertexBufferBinding;
 
@@ -20,10 +20,8 @@ namespace DemoFramework.SharpDX11
         {
             device = graphics.Device;
             inputAssembler = device.ImmediateContext.InputAssembler;
-            lineArray = new PositionColored[0];
 
-            InputElement[] elements = new InputElement[]
-            {
+            InputElement[] elements = {
                 new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0, InputClassification.PerVertexData, 0),
                 new InputElement("COLOR", 0, Format.R8G8B8A8_UNorm, 12, 0, InputClassification.PerVertexData, 0)
             };

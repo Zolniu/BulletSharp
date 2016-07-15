@@ -1,136 +1,172 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using BulletSharp;
 
 namespace DemoFramework
 {
-    public abstract class Demo : System.IDisposable
+    public abstract class Demo : IDisposable
     {
-        Graphics _graphics;
-        protected Graphics Graphics
-        {
-            get { return _graphics; }
-            private set { _graphics = value; }
-        }
+        protected Graphics Graphics { get; set; }
+        public FreeLook Freelook { get; set; }
+        public Input Input { get; set; }
 
-        FreeLook _freelook;
-        public FreeLook Freelook
+        // Info text
+        CultureInfo _culture = CultureInfo.InvariantCulture;
+        string _demoText = "";
+        protected string DemoText
         {
-            get { return _freelook; }
-            private set { _freelook = value; }
+            get { return _demoText; }
+            set
+            {
+                _demoText = value;
+                SetInfoText();
+            }
         }
-
-        Input _input;
-        public Input Input
-        {
-            get { return _input; }
-            set { _input = value; }
-        }
-
 
         // Frame counting
-        Clock clock = new Clock();
-        float frameAccumulator;
-        int frameCount;
+        public Clock Clock { get; } = new Clock();
 
-        float _frameDelta;
-        public float FrameDelta
-        {
-            get { return _frameDelta; }
-        }
+        public float FrameDelta { get; private set; }
         public float FramesPerSecond { get; private set; }
-
+        float _frameAccumulator;
 
         // Physics
-        DynamicsWorld _world;
-        public DynamicsWorld World
-        {
-            get { return _world; }
-            protected set { _world = value; }
-        }
+        public DynamicsWorld World { get; protected set; }
 
         protected CollisionConfiguration CollisionConf;
         protected CollisionDispatcher Dispatcher;
         protected BroadphaseInterface Broadphase;
         protected ConstraintSolver Solver;
-        public List<CollisionShape> CollisionShapes { get; private set; }
+        public List<CollisionShape> CollisionShapes { get; } = new List<CollisionShape>();
 
         protected BoxShape shootBoxShape;
         protected float shootBoxInitialSpeed = 40;
         RigidBody pickedBody;
         protected TypedConstraint pickConstraint;
         float oldPickingDist;
+        bool prevCanSleep;
+        MultiBodyPoint2Point pickingMultiBodyPoint2Point;
 
-        DebugDrawModes debugDrawMode = DebugDrawModes.DrawWireframe;
+        // Debug drawing
+        bool _isDebugDrawEnabled;
+        DebugDrawModes _debugDrawMode = DebugDrawModes.DrawWireframe;
+        IDebugDraw _debugDrawer;
+
         public DebugDrawModes DebugDrawMode
         {
             get
             {
-                if (_world == null || _world.DebugDrawer == null)
-                    return debugDrawMode;
-                return _world.DebugDrawer.DebugMode;
+                return _debugDrawMode;
             }
             set
             {
-                if (_world != null && _world.DebugDrawer != null)
-                    _world.DebugDrawer.DebugMode = value;
-                debugDrawMode = value;
+                _debugDrawMode = value;
+                if (_debugDrawer != null)
+                    _debugDrawer.DebugMode = value;
             }
         }
 
-        bool isDebugDrawEnabled = false;
         public bool IsDebugDrawEnabled
         {
             get
             {
-                if (!isDebugDrawEnabled)
-                    return false;
-
-                if (_world.DebugDrawer == null)
-                {
-                    DebugDrawModes debugDrawMode = DebugDrawMode;
-                    _world.DebugDrawer = Graphics.GetPhysicsDebugDrawer();
-                    _world.DebugDrawer.DebugMode = debugDrawMode;
-                }
-                return true;
+                return _isDebugDrawEnabled;
             }
             set
             {
-                if (value == true && _world.DebugDrawer == null)
+                if (value)
                 {
-                    DebugDrawModes debugDrawMode = DebugDrawMode;
-                    _world.DebugDrawer = Graphics.GetPhysicsDebugDrawer();
-                    _world.DebugDrawer.DebugMode = debugDrawMode;
+                    if (_debugDrawer == null)
+                    {
+                        _debugDrawer = Graphics.GetPhysicsDebugDrawer();
+                        _debugDrawer.DebugMode = _debugDrawMode;
+                        if (World != null)
+                        {
+                            World.DebugDrawer = _debugDrawer;
+                        }
+                    }
                 }
-                isDebugDrawEnabled = value;
+                else
+                {
+                    if (_debugDrawer != null)
+                    {
+                        if (World != null)
+                        {
+                            World.DebugDrawer = null;
+                        }
+                        if (_debugDrawer is IDisposable)
+                        {
+                            (_debugDrawer as IDisposable).Dispose();
+                        }
+                        _debugDrawer = null;
+                    }
+                }
+                _isDebugDrawEnabled = value;
             }
         }
 
-        public Demo()
+        bool isCullingEnabled = true;
+        public bool CullingEnabled
         {
-            CollisionShapes = new List<CollisionShape>();
+            get
+            {
+                return isCullingEnabled;
+            }
+            set
+            {
+                Graphics.CullingEnabled = value;
+                isCullingEnabled = value;
+            }
         }
 
         public void Run()
         {
-            if (_graphics != null)
+            using (Graphics = GraphicsLibraryManager.GetGraphics(this))
             {
-                _graphics.Form.Close();
+                Input = new Input(Graphics.Form);
+                Freelook = new FreeLook(Input);
+
+                Graphics.Initialize();
+                Graphics.CullingEnabled = isCullingEnabled;
+                OnInitialize();
+                if (World == null)
+                {
+                    OnInitializePhysics();
+                }
+                if (_isDebugDrawEnabled)
+                {
+                    if (_debugDrawer == null)
+                    {
+                        _debugDrawer = Graphics.GetPhysicsDebugDrawer();
+                        _debugDrawer.DebugMode = DebugDrawMode;
+                    }
+                    if (World != null)
+                    {
+                        World.DebugDrawer = _debugDrawer;
+                    }
+                }
+                Graphics.UpdateView();
+                SetInfoText();
+
+                Graphics.Run();
+
+                if (_debugDrawer != null)
+                {
+                    if (World != null)
+                    {
+                        World.DebugDrawer = null;
+                    }
+                    if (_debugDrawer is IDisposable)
+                    {
+                        (_debugDrawer as IDisposable).Dispose();
+                    }
+                    _debugDrawer = null;
+                }
             }
-            _graphics = LibraryManager.GetGraphics(this);
-
-            _input = new Input(Graphics.Form);
-            Freelook = new FreeLook(_input);
-
-            _graphics.Initialize();
-            OnInitialize();
-            OnInitializePhysics();
-            _graphics.UpdateView();
-
-            clock.Start();
-            _graphics.Run();
+            Graphics = null;
         }
 
         protected virtual void OnInitialize()
@@ -144,31 +180,35 @@ namespace DemoFramework
             RemovePickingConstraint();
             ExitPhysics();
             OnInitializePhysics();
+            if (World != null && _debugDrawer != null)
+            {
+                World.DebugDrawer = _debugDrawer;
+            }
         }
 
         public virtual void ExitPhysics()
         {
-            if (_world != null)
+            if (World != null)
             {
                 //remove/dispose constraints
                 int i;
-                for (i = _world.NumConstraints - 1; i >= 0; i--)
+                for (i = World.NumConstraints - 1; i >= 0; i--)
                 {
-                    TypedConstraint constraint = _world.GetConstraint(i);
-                    _world.RemoveConstraint(constraint);
+                    TypedConstraint constraint = World.GetConstraint(i);
+                    World.RemoveConstraint(constraint);
                     constraint.Dispose();
                 }
 
                 //remove the rigidbodies from the dynamics world and delete them
-                for (i = _world.NumCollisionObjects - 1; i >= 0; i--)
+                for (i = World.NumCollisionObjects - 1; i >= 0; i--)
                 {
-                    CollisionObject obj = _world.CollisionObjectArray[i];
+                    CollisionObject obj = World.CollisionObjectArray[i];
                     RigidBody body = obj as RigidBody;
                     if (body != null && body.MotionState != null)
                     {
                         body.MotionState.Dispose();
                     }
-                    _world.RemoveCollisionObject(obj);
+                    World.RemoveCollisionObject(obj);
                     obj.Dispose();
                 }
 
@@ -177,7 +217,7 @@ namespace DemoFramework
                     shape.Dispose();
                 CollisionShapes.Clear();
 
-                _world.Dispose();
+                World.Dispose();
                 Broadphase.Dispose();
                 Dispatcher.Dispose();
                 CollisionConf.Dispose();
@@ -197,25 +237,40 @@ namespace DemoFramework
             }
         }
 
+        void SetInfoText()
+        {
+            Graphics.SetInfoText(
+                $"Physics: {Clock.PhysicsAverage.ToString("0.000", _culture)} ms\n" +
+                $"Render: {Clock.RenderAverage.ToString("0.000", _culture)} ms\n" +
+                $"{Clock.FrameCount} FPS\n" +
+                "F1 - Help\n" +
+                _demoText);
+        }
+
         public virtual void OnUpdate()
         {
-            _frameDelta = clock.Update();
-            frameAccumulator += _frameDelta;
-            ++frameCount;
-            if (frameAccumulator >= 1.0f)
+            FrameDelta = Clock.GetFrameDelta();
+            _frameAccumulator += FrameDelta;
+            if (_frameAccumulator >= 1.0f)
             {
-                FramesPerSecond = frameCount / frameAccumulator;
+                FramesPerSecond = Clock.FrameCount / _frameAccumulator;
+                SetInfoText();
 
-                frameAccumulator = 0.0f;
-                frameCount = 0;
+                _frameAccumulator = 0.0f;
+                Clock.Reset();
             }
 
-            _world.StepSimulation(_frameDelta);
+            if (World != null)
+            {
+                Clock.StartPhysics();
+                World.StepSimulation(FrameDelta);
+                Clock.StopPhysics();
+            }
 
-            if (_freelook.Update(_frameDelta))
-                _graphics.UpdateView();
+            if (Freelook.Update(FrameDelta))
+                Graphics.UpdateView();
 
-            _input.ClearKeyCache();
+            Input.ClearKeyCache();
         }
 
         public void Dispose()
@@ -228,41 +283,63 @@ namespace DemoFramework
         {
             if (disposing)
             {
-                if (_graphics != null)
-                {
-                    _graphics.Dispose();
-                    _graphics = null;
-                }
                 ExitPhysics();
             }
         }
 
         public virtual void OnHandleInput()
         {
-            if (_input.KeysPressed.Count != 0)
+            if (Input.KeysPressed.Count != 0)
             {
-                switch (_input.KeysPressed[0])
+                switch (Input.KeysPressed[0])
                 {
                     case Keys.Escape:
                     case Keys.Q:
                         Graphics.Form.Close();
                         return;
+                    case Keys.F1:
+                        MessageBox.Show(
+                            "Move using WASD + shift\n" +
+                            "Left click - point camera\n" +
+                            "Right click - pick up an object using a Point2PointConstraint\n" +
+                            "Right click + shift - pick up an object using a fixed Generic6DofConstraint\n" +
+                            "Space - shoot box\n" +
+                            "Q - quit\n" +
+                            Graphics.InfoText,
+                            "Help");
+                        // Key release won't be captured
+                        Input.KeysDown.Remove(Keys.F1);
+                        break;
                     case Keys.F3:
                         IsDebugDrawEnabled = !IsDebugDrawEnabled;
                         break;
                     case Keys.F8:
                         Input.ClearKeyCache();
-                        LibraryManager.ExitWithReload = true;
+                        GraphicsLibraryManager.ExitWithReload = true;
                         Graphics.Form.Close();
                         break;
                     case Keys.F11:
                         Graphics.IsFullScreen = !Graphics.IsFullScreen;
                         break;
+                    case (Keys.Control | Keys.F):
+                        const int maxSerializeBufferSize = 1024 * 1024 * 5;
+                        using (var serializer = new DefaultSerializer(maxSerializeBufferSize))
+                        {
+                            World.Serialize(serializer);
+                            byte[] dataBytes = new byte[serializer.CurrentBufferSize];
+                            System.Runtime.InteropServices.Marshal.Copy(serializer.BufferPointer, dataBytes, 0,
+                                dataBytes.Length);
+                            using (var file = new System.IO.FileStream("world.bullet", System.IO.FileMode.Create))
+                            {
+                                file.Write(dataBytes, 0, dataBytes.Length);
+                            }
+                        }
+                        break;
                     case Keys.G:
                         //shadowsEnabled = !shadowsEnabled;
                         break;
                     case Keys.Space:
-                        ShootBox(_freelook.Eye, GetRayTo(_input.MousePoint, _freelook.Eye, _freelook.Target, Graphics.FieldOfView));
+                        ShootBox(Freelook.Eye, GetRayTo(Input.MousePoint, Freelook.Eye, Freelook.Target, Graphics.FieldOfView));
                         break;
                     case Keys.Return:
                         ClientResetScene();
@@ -270,20 +347,21 @@ namespace DemoFramework
                 }
             }
 
-            if (_input.MousePressed != MouseButtons.None)
+            if (Input.MousePressed != MouseButtons.None)
             {
-                Vector3 rayTo = GetRayTo(_input.MousePoint, _freelook.Eye, _freelook.Target, Graphics.FieldOfView);
+                Vector3 rayTo = GetRayTo(Input.MousePoint, Freelook.Eye, Freelook.Target, Graphics.FieldOfView);
 
-                if (_input.MousePressed == MouseButtons.Right)
+                if (Input.MousePressed == MouseButtons.Right)
                 {
-                    if (_world != null)
+                    if (World != null)
                     {
-                        Vector3 rayFrom = _freelook.Eye;
+                        Vector3 rayFrom = Freelook.Eye;
 
                         ClosestRayResultCallback rayCallback = new ClosestRayResultCallback(ref rayFrom, ref rayTo);
-                        _world.RayTest(ref rayFrom, ref rayTo, rayCallback);
+                        World.RayTest(ref rayFrom, ref rayTo, rayCallback);
                         if (rayCallback.HasHit)
                         {
+                            Vector3 pickPos = rayCallback.HitPointWorld;
                             RigidBody body = rayCallback.CollisionObject as RigidBody;
                             if (body != null)
                             {
@@ -292,10 +370,9 @@ namespace DemoFramework
                                     pickedBody = body;
                                     pickedBody.ActivationState = ActivationState.DisableDeactivation;
 
-                                    Vector3 pickPos = rayCallback.HitPointWorld;
                                     Vector3 localPivot = Vector3.TransformCoordinate(pickPos, Matrix.Invert(body.CenterOfMassTransform));
 
-                                    if (_input.KeysDown.Contains(Keys.ShiftKey))
+                                    if (Input.KeysDown.Contains(Keys.ShiftKey))
                                     {
                                         Generic6DofConstraint dof6 = new Generic6DofConstraint(body, Matrix.Translation(localPivot), false)
                                         {
@@ -305,7 +382,7 @@ namespace DemoFramework
                                             AngularUpperLimit = Vector3.Zero
                                         };
 
-                                        _world.AddConstraint(dof6);
+                                        World.AddConstraint(dof6);
                                         pickConstraint = dof6;
 
                                         dof6.SetParam(ConstraintParam.StopCfm, 0.8f, 0);
@@ -325,7 +402,7 @@ namespace DemoFramework
                                     else
                                     {
                                         Point2PointConstraint p2p = new Point2PointConstraint(body, localPivot);
-                                        _world.AddConstraint(p2p);
+                                        World.AddConstraint(p2p);
                                         pickConstraint = p2p;
                                         p2p.Setting.ImpulseClamp = 30;
                                         //very weak constraint for picking
@@ -339,69 +416,103 @@ namespace DemoFramework
                                         p2p.SetParam(ConstraintParams.Erp, 0.1f, 2);
                                         */
                                     }
-
-                                    oldPickingDist = (pickPos - rayFrom).Length;
                                 }
                             }
+                            else
+                            {
+                                MultiBodyLinkCollider multiCol = rayCallback.CollisionObject as MultiBodyLinkCollider;
+                                if (multiCol != null && multiCol.MultiBody != null)
+                                {
+                                    MultiBody mb = multiCol.MultiBody;
+
+                                    prevCanSleep = mb.CanSleep;
+                                    mb.CanSleep = false;
+                                    Vector3 pivotInA = mb.WorldPosToLocal(multiCol.Link, pickPos);
+
+                                    MultiBodyPoint2Point p2p = new MultiBodyPoint2Point(mb, multiCol.Link, null, pivotInA, pickPos);
+                                    p2p.MaxAppliedImpulse = 2;
+
+                                    (World as MultiBodyDynamicsWorld).AddMultiBodyConstraint(p2p);
+                                    pickingMultiBodyPoint2Point = p2p;
+                                }
+                            }
+                            oldPickingDist = (pickPos - rayFrom).Length;
                         }
                         rayCallback.Dispose();
                     }
                 }
             }
-            else if (_input.MouseReleased == MouseButtons.Right)
+            else if (Input.MouseReleased == MouseButtons.Right)
             {
                 RemovePickingConstraint();
             }
 
             // Mouse movement
-            if (_input.MouseDown == MouseButtons.Right)
+            if (Input.MouseDown == MouseButtons.Right)
             {
-                if (pickConstraint != null)
+                MovePickedBody();
+            }
+        }
+
+        void MovePickedBody()
+        {
+            if (pickConstraint != null)
+            {
+                Vector3 rayFrom = Freelook.Eye;
+                Vector3 newRayTo = GetRayTo(Input.MousePoint, rayFrom, Freelook.Target, Graphics.FieldOfView);
+
+                //keep it at the same picking distance
+                Vector3 dir = newRayTo - rayFrom;
+                dir.Normalize();
+                dir *= oldPickingDist;
+
+                if (pickConstraint.ConstraintType == TypedConstraintType.D6)
                 {
-                    Vector3 newRayTo = GetRayTo(_input.MousePoint, _freelook.Eye, _freelook.Target, Graphics.FieldOfView);
+                    Generic6DofConstraint pickCon = pickConstraint as Generic6DofConstraint;
 
-                    if (pickConstraint.ConstraintType == TypedConstraintType.D6)
-                    {
-                        Generic6DofConstraint pickCon = pickConstraint as Generic6DofConstraint;
-
-                        //keep it at the same picking distance
-                        Vector3 rayFrom = _freelook.Eye;
-                        Vector3 dir = newRayTo - rayFrom;
-                        dir.Normalize();
-                        dir *= oldPickingDist;
-                        Vector3 newPivotB = rayFrom + dir;
-
-                        Matrix tempFrameOffsetA = pickCon.FrameOffsetA;
-                        tempFrameOffsetA.M41 = newPivotB.X;
-                        tempFrameOffsetA.M42 = newPivotB.Y;
-                        tempFrameOffsetA.M43 = newPivotB.Z;
-                        pickCon.FrameOffsetA = tempFrameOffsetA;
-                    }
-                    else
-                    {
-                        Point2PointConstraint pickCon = pickConstraint as Point2PointConstraint;
-
-                        //keep it at the same picking distance
-                        Vector3 rayFrom = _freelook.Eye;
-                        Vector3 dir = newRayTo - rayFrom;
-                        dir.Normalize();
-                        dir *= oldPickingDist;
-                        pickCon.PivotInB = rayFrom + dir;
-                    }
+                    //keep it at the same picking distance
+                    Matrix tempFrameOffsetA = pickCon.FrameOffsetA;
+                    tempFrameOffsetA.Origin = rayFrom + dir;
+                    pickCon.FrameOffsetA = tempFrameOffsetA;
                 }
+                else
+                {
+                    Point2PointConstraint pickCon = pickConstraint as Point2PointConstraint;
+
+                    //keep it at the same picking distance
+                    pickCon.PivotInB = rayFrom + dir;
+                }
+            }
+            else if (pickingMultiBodyPoint2Point != null)
+            {
+                Vector3 rayFrom = Freelook.Eye;
+                Vector3 newRayTo = GetRayTo(Input.MousePoint, Freelook.Eye, Freelook.Target, Graphics.FieldOfView);
+
+                Vector3 dir = (newRayTo - rayFrom);
+                dir.Normalize();
+                dir *= oldPickingDist;
+                pickingMultiBodyPoint2Point.PivotInB = rayFrom + dir;
             }
         }
 
         void RemovePickingConstraint()
         {
-            if (pickConstraint != null && _world != null)
+            if (pickConstraint != null && World != null)
             {
-                _world.RemoveConstraint(pickConstraint);
+                World.RemoveConstraint(pickConstraint);
                 pickConstraint.Dispose();
                 pickConstraint = null;
                 pickedBody.ForceActivationState(ActivationState.ActiveTag);
                 pickedBody.DeactivationTime = 0;
                 pickedBody = null;
+            }
+
+            if (pickingMultiBodyPoint2Point != null)
+            {
+                pickingMultiBodyPoint2Point.MultiBodyA.CanSleep = prevCanSleep;
+                (World as MultiBodyDynamicsWorld).RemoveMultiBodyConstraint(pickingMultiBodyPoint2Point);
+                pickingMultiBodyPoint2Point.Dispose();
+                pickingMultiBodyPoint2Point = null;
             }
         }
 
@@ -414,7 +525,7 @@ namespace DemoFramework
             const float farPlane = 10000.0f;
             rayForward *= farPlane;
 
-            Vector3 vertical = _freelook.Up;
+            Vector3 vertical = Freelook.Up;
 
             Vector3 hor = Vector3.Cross(rayForward, vertical);
             hor.Normalize();
@@ -425,7 +536,7 @@ namespace DemoFramework
             hor *= 2.0f * farPlane * tanFov;
             vertical *= 2.0f * farPlane * tanFov;
 
-            Size clientSize = _graphics.Form.ClientSize;
+            Size clientSize = Graphics.Form.ClientSize;
             if (clientSize.Width > clientSize.Height)
             {
                 aspect = (float)clientSize.Width / (float)clientSize.Height;
@@ -449,7 +560,7 @@ namespace DemoFramework
 
         public virtual void ShootBox(Vector3 camPos, Vector3 destination)
         {
-            if (_world == null)
+            if (World == null)
                 return;
 
             const float mass = 1.0f;
@@ -488,7 +599,7 @@ namespace DemoFramework
             RigidBody body = new RigidBody(rbInfo);
             rbInfo.Dispose();
 
-            _world.AddRigidBody(body);
+            World.AddRigidBody(body);
 
             return body;
         }

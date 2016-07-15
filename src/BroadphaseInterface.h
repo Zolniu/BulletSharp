@@ -12,31 +12,37 @@ namespace BulletSharp
 
 	public ref class BroadphaseAabbCallback abstract
 	{
+	private:
+		[UnmanagedFunctionPointer(CallingConvention::Cdecl), SuppressUnmanagedCodeSecurity]
+        delegate bool ProcessUnmanagedDelegate(IntPtr proxy);
+
+		bool ProcessUnmanaged(IntPtr proxy);
+
 	internal:
 		btBroadphaseAabbCallback* _native;
+		ProcessUnmanagedDelegate^ _process;
 
 		BroadphaseAabbCallback(btBroadphaseAabbCallback* native);
+
+		!BroadphaseAabbCallback();
+		~BroadphaseAabbCallback();
 
 	protected:
 		BroadphaseAabbCallback();
 
 	public:
 		virtual bool Process(BroadphaseProxy^ proxy) = 0;
-
-	public:
-		~BroadphaseAabbCallback();
-	protected:
-		!BroadphaseAabbCallback();
 	};
+
+	typedef bool (*pBroadphaseAabbCallback_Process)(const btBroadphaseProxy* proxy);
 
 	struct BroadphaseAabbCallbackWrapper : public btBroadphaseAabbCallback
 	{
-	protected:
-		void* _aabbCallback;
+	private:
+		pBroadphaseAabbCallback_Process _processCallback;
 
 	public:
-		BroadphaseAabbCallbackWrapper(BroadphaseAabbCallback^ aabbCallback);
-		~BroadphaseAabbCallbackWrapper();
+		BroadphaseAabbCallbackWrapper(pBroadphaseAabbCallback_Process processCallback);
 
 		virtual bool process(const btBroadphaseProxy* proxy);
 	};
@@ -45,9 +51,6 @@ namespace BulletSharp
 	{
 	private:
 		UIntArray^ _signs;
-
-	internal:
-		BroadphaseRayCallback(BroadphaseRayCallbackWrapper* native);
 
 	protected:
 		BroadphaseRayCallback();
@@ -73,54 +76,48 @@ namespace BulletSharp
 
 	struct BroadphaseRayCallbackWrapper : public btBroadphaseRayCallback
 	{
-	protected:
-		void* _rayCallback;
+	private:
+		pBroadphaseAabbCallback_Process _processCallback;
 
 	public:
-		BroadphaseRayCallbackWrapper(void* rayCallbackHandle);
-		~BroadphaseRayCallbackWrapper();
+		BroadphaseRayCallbackWrapper(pBroadphaseAabbCallback_Process processCallback);
 
 		virtual bool process(const btBroadphaseProxy* proxy);
 	};
 
-	public ref class BroadphaseInterface : ITrackingDisposable // abstract
+	public ref class BroadphaseInterface abstract
 	{
-	public:
-		virtual event EventHandler^ OnDisposing;
-		virtual event EventHandler^ OnDisposed;
-
 	internal:
 		btBroadphaseInterface* _native;
 
+	protected:
+		OverlappingPairCache^ _overlappingPairCache;
+
+	internal:
 		BroadphaseInterface(btBroadphaseInterface* native);
 
-	protected:
-		OverlappingPairCache^ _pairCache;
-
-	public:
 		!BroadphaseInterface();
-	protected:
 		~BroadphaseInterface();
 
 	public:
-		void AabbTest(Vector3% aabbMin, Vector3% aabbMax, BroadphaseAabbCallback^ callback);
+		void AabbTestRef(Vector3% aabbMin, Vector3% aabbMax, BroadphaseAabbCallback^ callback);
 		void AabbTest(Vector3 aabbMin, Vector3 aabbMax, BroadphaseAabbCallback^ callback);
 		void CalculateOverlappingPairs(Dispatcher^ dispatcher);
-		BroadphaseProxy^ CreateProxy(Vector3% aabbMin, Vector3% aabbMax,
+		virtual BroadphaseProxy^ CreateProxy(Vector3% aabbMin, Vector3% aabbMax,
 			BroadphaseNativeType shapeType, IntPtr userPtr, short collisionFilterGroup,
-			short collisionFilterMask, Dispatcher^ dispatcher, IntPtr multiSapProxy);
+			short collisionFilterMask, Dispatcher^ dispatcher, IntPtr multiSapProxy) = 0;
 		void DestroyProxy(BroadphaseProxy^ proxy, Dispatcher^ dispatcher);
 		void GetAabb(BroadphaseProxy^ proxy, [Out] Vector3% aabbMin, [Out] Vector3% aabbMax);
 		void GetBroadphaseAabb([Out] Vector3% aabbMin, [Out] Vector3% aabbMax);
 		void PrintStats();
-		void RayTest(Vector3% rayFrom, Vector3% rayTo, BroadphaseRayCallback^ rayCallback,
+		void RayTestRef(Vector3% rayFrom, Vector3% rayTo, BroadphaseRayCallback^ rayCallback,
 			Vector3% aabbMin, Vector3% aabbMax);
 		void RayTest(Vector3 rayFrom, Vector3 rayTo, BroadphaseRayCallback^ rayCallback,
 			Vector3 aabbMin, Vector3 aabbMax);
-		void RayTest(Vector3% rayFrom, Vector3% rayTo, BroadphaseRayCallback^ rayCallback);
+		void RayTestRef(Vector3% rayFrom, Vector3% rayTo, BroadphaseRayCallback^ rayCallback);
 		void RayTest(Vector3 rayFrom, Vector3 rayTo, BroadphaseRayCallback^ rayCallback);
 		void ResetPool(Dispatcher^ dispatcher);
-		void SetAabb(BroadphaseProxy^ proxy, Vector3% aabbMin, Vector3% aabbMax, Dispatcher^ dispatcher);
+		void SetAabbRef(BroadphaseProxy^ proxy, Vector3% aabbMin, Vector3% aabbMax, Dispatcher^ dispatcher);
 		void SetAabb(BroadphaseProxy^ proxy, Vector3 aabbMin, Vector3 aabbMax, Dispatcher^ dispatcher);
 
 		property bool IsDisposed

@@ -25,13 +25,15 @@ namespace BulletSharp
 			Continuous = btDispatcherInfo::DISPATCH_CONTINUOUS
 		};
 
+	internal:
+		btDispatcherInfo* _native;
+
 #ifndef DISABLE_DEBUGDRAW
 	private:
 		IDebugDraw^ _debugDraw;
 #endif
 
 	internal:
-		btDispatcherInfo* _native;
 #ifndef DISABLE_DEBUGDRAW
 		DebugDrawWrapper* _debugDrawWrapper;
 #endif
@@ -113,21 +115,18 @@ namespace BulletSharp
 		}
 	};
 
-	public ref class Dispatcher abstract : ITrackingDisposable
+	public ref class Dispatcher abstract
 	{
-	public:
-		virtual event EventHandler^ OnDisposing;
-		virtual event EventHandler^ OnDisposed;
-
 	internal:
 		btDispatcher* _native;
 		Dictionary<IntPtr, DispatcherInfo^>^ _dispatcherInfoRefs;
 
 		Dispatcher(btDispatcher* native);
 
-	public:
+	private:
+		PoolAllocator^ _internalManifoldPool;
+
 		!Dispatcher();
-	protected:
 		~Dispatcher();
 
 	public:

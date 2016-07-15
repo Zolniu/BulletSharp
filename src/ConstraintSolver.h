@@ -10,12 +10,8 @@ namespace BulletSharp
 	ref class TypedConstraint;
 	interface class IDebugDraw;
 
-	public ref class ConstraintSolver abstract : ITrackingDisposable
+	public ref class ConstraintSolver abstract
 	{
-	public:
-		virtual event EventHandler^ OnDisposing;
-		virtual event EventHandler^ OnDisposed;
-
 	internal:
 		btConstraintSolver* _native;
 
@@ -24,11 +20,8 @@ namespace BulletSharp
 
 	internal:
 		ConstraintSolver(btConstraintSolver* native);
-		static ConstraintSolver^ GetManaged(btConstraintSolver* native);
 
-	public:
 		!ConstraintSolver();
-	protected:
 		~ConstraintSolver();
 
 	public:

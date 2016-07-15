@@ -191,10 +191,7 @@ namespace DemoFramework.SlimDX
                 case BroadphaseNativeType.ConeShape:
                     mesh = CreateConeShape(shape as ConeShape);
                     break;
-                case BroadphaseNativeType.Convex2DShape:
-                    Render((shape as Convex2DShape).ChildShape);
-                    return;
-                case BroadphaseNativeType.StaticPlane:
+                case BroadphaseNativeType.StaticPlaneShape:
                     mesh = CreateStaticPlaneShape(shape as StaticPlaneShape);
                     RenderStaticPlaneShape(mesh);
                     return;

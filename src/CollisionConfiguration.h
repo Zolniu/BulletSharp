@@ -10,16 +10,19 @@ namespace BulletSharp
 	internal:
 		btCollisionConfiguration* _native;
 
-		CollisionConfiguration(btCollisionConfiguration* native);
+		CollisionConfiguration(btCollisionConfiguration* native, PoolAllocator^ collisionAlgorithmPool,
+			PoolAllocator^ persistentManifoldPool);
 
-	public:
+	private:
+		PoolAllocator^ _collisionAlgorithmPool;
+		PoolAllocator^ _persistentManifoldPool;
+
 		!CollisionConfiguration();
-	protected:
 		~CollisionConfiguration();
 
 	public:
-		CollisionAlgorithmCreateFunc^ GetCollisionAlgorithmCreateFunc(BroadphaseNativeType proxyType0,
-			BroadphaseNativeType proxyType1);
+		virtual CollisionAlgorithmCreateFunc^ GetCollisionAlgorithmCreateFunc(BroadphaseNativeType proxyType0,
+			BroadphaseNativeType proxyType1) = 0;
 
 		property bool IsDisposed
 		{

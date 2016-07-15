@@ -30,7 +30,7 @@ SliderConstraint::SliderConstraint(RigidBody^ rigidBodyB, Matrix frameInB, bool 
 		useLinearReferenceFrameA);
 	TRANSFORM_DEL(frameInB);
 
-	_rigidBodyA = FixedBody;
+	_rigidBodyA = GetFixedBody();
 	_rigidBodyB = rigidBodyB;
 }
 
@@ -190,6 +190,11 @@ void SliderConstraint::DampingOrthoLin::set(btScalar dampingOrthoLin)
 	Native->setDampingOrthoLin(dampingOrthoLin);
 }
 
+SliderFlags SliderConstraint::Flags::get()
+{
+	return (SliderFlags) Native->getFlags();
+}
+
 Matrix SliderConstraint::FrameOffsetA::get()
 {
 	return Math::BtTransformToMatrix(&Native->getFrameOffsetA());
@@ -199,12 +204,7 @@ Matrix SliderConstraint::FrameOffsetB::get()
 {
 	return Math::BtTransformToMatrix(&Native->getFrameOffsetB());
 }
-/*
-void SliderConstraint::Info1NonVirtual::get(ConstraintInfo1^ info)
-{
-	Native->getInfo1NonVirtual(info->_native);
-}
-*/
+
 btScalar SliderConstraint::LinDepth::get()
 {
 	return Native->getLinDepth();

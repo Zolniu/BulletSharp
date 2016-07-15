@@ -46,6 +46,8 @@ namespace CharacterDemo
 
         PairCachingGhostObject ghostObject;
         KinematicCharacterController character;
+        ClosestConvexResultCallback convexResultCallback;
+        SphereShape cameraSphere;
 
         protected override void OnInitialize()
         {
@@ -53,10 +55,7 @@ namespace CharacterDemo
             Freelook.SetEyeTarget(eye, target);
 
             Graphics.SetFormText("BulletSharp - Character Demo");
-            Graphics.SetInfoText("Move using arrow keys\n" +
-                "F3 - Toggle debug\n" +
-                //"F11 - Toggle fullscreen\n" +
-                "Space - Shoot box");
+            DemoText = "Space - Jump";
         }
 
         protected override void OnInitializePhysics()
@@ -94,6 +93,10 @@ namespace CharacterDemo
             World.AddCollisionObject(ghostObject, CollisionFilterGroups.CharacterFilter, CollisionFilterGroups.StaticFilter | CollisionFilterGroups.DefaultFilter);
 
             World.AddAction(character);
+
+            convexResultCallback = new ClosestConvexResultCallback();
+            convexResultCallback.CollisionFilterMask = CollisionFilterGroups.StaticFilter;
+            cameraSphere = new SphereShape(0.2f);
         }
 
         public override void ClientResetScene()
@@ -101,7 +104,6 @@ namespace CharacterDemo
             World.Broadphase.OverlappingPairCache.CleanProxyFromPairs(ghostObject.BroadphaseHandle, World.Dispatcher);
 
             character.Reset(World);
-            ///WTF
             character.Warp(new Vector3(10.210001f, -2.0306311f, 16.576973f));
         }
 
@@ -124,17 +126,17 @@ namespace CharacterDemo
             if (Input.KeysDown.Contains(Keys.Left))
             {
                 Matrix orn = xform;
-                orn.set_Rows(3, new Vector4(0, 0, 0, 1));
+                orn.Origin = Vector3.Zero;
                 orn *= Matrix.RotationAxis(upDir, -turnSpeed);
-                orn.set_Rows(3, new Vector4(pos.X, pos.Y, pos.Z, 1));
+                orn.Origin = pos;
                 ghostObject.WorldTransform = orn;
             }
             if (Input.KeysDown.Contains(Keys.Right))
             {
                 Matrix orn = xform;
-                orn.set_Rows(3, new Vector4(0, 0, 0, 1));
+                orn.Origin = Vector3.Zero;
                 orn *= Matrix.RotationAxis(upDir, turnSpeed);
-                orn.set_Rows(3, new Vector4(pos.X, pos.Y, pos.Z, 1));
+                orn.Origin = pos;
                 ghostObject.WorldTransform = orn;
             }
 
@@ -150,23 +152,32 @@ namespace CharacterDemo
             Vector3 cameraPos = pos - forwardDir * 12 + upDir * 5;
 
             //use the convex sweep test to find a safe position for the camera (not blocked by static geometry)
-            using (var cb = new ClosestConvexResultCallback(pos, cameraPos))
+            convexResultCallback.ConvexFromWorld = pos;
+            convexResultCallback.ConvexToWorld = cameraPos;
+            convexResultCallback.ClosestHitFraction = 1.0f;
+            World.ConvexSweepTest(cameraSphere, Matrix.Translation(pos), Matrix.Translation(cameraPos), convexResultCallback);
+            if (convexResultCallback.HasHit)
             {
-                using (var cameraSphere = new SphereShape(0.2f))
-                {
-                    cb.CollisionFilterMask = CollisionFilterGroups.StaticFilter;
-                    World.ConvexSweepTest(cameraSphere, Matrix.Translation(pos), Matrix.Translation(cameraPos), cb);
-                }
-                if (cb.HasHit)
-                {
-                    cameraPos = Vector3.Lerp(pos, cameraPos, cb.ClosestHitFraction);
-                }
+                cameraPos = Vector3.Lerp(pos, cameraPos, convexResultCallback.ClosestHitFraction);
             }
             Freelook.SetEyeTarget(cameraPos, pos);
 
             character.SetWalkDirection(walkDirection * walkSpeed);
 
+            if (Input.KeysDown.Contains(Keys.Space))
+            {
+                character.Jump();
+                return;
+            }
+
             base.OnHandleInput();
+        }
+
+        public override void ExitPhysics()
+        {
+            cameraSphere.Dispose();
+
+            base.ExitPhysics();
         }
     }
 
@@ -177,7 +188,7 @@ namespace CharacterDemo
         {
             using (Demo demo = new CharacterDemo())
             {
-                LibraryManager.Initialize(demo);
+                GraphicsLibraryManager.Run(demo);
             }
         }
     }

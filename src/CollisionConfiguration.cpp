@@ -1,14 +1,16 @@
 #include "StdAfx.h"
 
 #include "CollisionConfiguration.h"
-#include "CollisionCreateFunc.h"
 #ifndef DISABLE_UNCOMMON
 #include "PoolAllocator.h"
 #endif
 
-CollisionConfiguration::CollisionConfiguration(btCollisionConfiguration* native)
+CollisionConfiguration::CollisionConfiguration(btCollisionConfiguration* native,
+	PoolAllocator^ collisionAlgorithmPool, PoolAllocator^ persistentManifoldPool)
 {
 	_native = native;
+	_collisionAlgorithmPool = collisionAlgorithmPool;
+	_persistentManifoldPool = persistentManifoldPool;
 }
 
 CollisionConfiguration::~CollisionConfiguration()
@@ -22,11 +24,6 @@ CollisionConfiguration::!CollisionConfiguration()
 	_native = NULL;
 }
 
-CollisionAlgorithmCreateFunc^ CollisionConfiguration::GetCollisionAlgorithmCreateFunc(BroadphaseNativeType proxyType0, BroadphaseNativeType proxyType1)
-{
-	return gcnew CollisionAlgorithmCreateFunc(_native->getCollisionAlgorithmCreateFunc((int)proxyType0, (int)proxyType1));
-}
-
 bool CollisionConfiguration::IsDisposed::get()
 {
 	return (_native == NULL);
@@ -35,11 +32,19 @@ bool CollisionConfiguration::IsDisposed::get()
 #ifndef DISABLE_UNCOMMON
 PoolAllocator^ CollisionConfiguration::CollisionAlgorithmPool::get()
 {
-	return gcnew PoolAllocator(_native->getCollisionAlgorithmPool());
+	if (!_collisionAlgorithmPool)
+	{
+		_collisionAlgorithmPool = gcnew PoolAllocator(_native->getCollisionAlgorithmPool(), true);
+	}
+	return _collisionAlgorithmPool;
 }
 
 PoolAllocator^ CollisionConfiguration::PersistentManifoldPool::get()
 {
-	return gcnew PoolAllocator(_native->getPersistentManifoldPool());
+	if (!_persistentManifoldPool)
+	{
+		_persistentManifoldPool = gcnew PoolAllocator(_native->getPersistentManifoldPool(), true);
+	}
+	return _persistentManifoldPool;
 }
 #endif

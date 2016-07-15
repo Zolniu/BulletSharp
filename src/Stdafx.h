@@ -22,7 +22,6 @@
 //#define DISABLE_INTERNAL
 //#define DISABLE_INTERNAL_EDGE_UTILITY
 //#define DISABLE_MLCP
-#define DISABLE_MULTITHREADED
 //#define DISABLE_SERIALIZE
 //#define DISABLE_SOFTBODY
 //#define DISABLE_UNCOMMON
@@ -35,35 +34,12 @@
 //#define BT_USE_DOUBLE_PRECISION
 
 
-// Choose one of these for CL
-//#define USE_MINICL
-//#define USE_INTEL_OPENCL
-//#define USE_AMD_OPENCL
-//#define USE_NVIDIA_OPENCL
-
-
 // This makes ManifoldPoint.ContactAdded, PersistentManifold.ContactProcessed and PersistentManifold.ContactDestroyed
 // events instead of delegate properties
 #define BT_CALLBACKS_ARE_EVENTS
 
 
-#if GRAPHICS_XNA31
-#using <Microsoft.Xna.Framework.dll>
-using namespace Microsoft::Xna::Framework;
-#elif GRAPHICS_XNA40
-#using <Microsoft.Xna.Framework.dll>
-using namespace Microsoft::Xna::Framework;
-#elif GRAPHICS_SLIMDX
-#if WIN32
-#using <x86/SlimDX.dll>
-#elif WIN64
-#using <x64/SlimDX.dll>
-#endif
-using namespace SlimDX;
-#elif GRAPHICS_SHARPDX
-#using <SharpDX.dll>
-using namespace SharpDX;
-#elif GRAPHICS_MOGRE
+#if GRAPHICS_MOGRE
 #if _DEBUG
 #using <Mogre_d.dll>
 #else
@@ -73,18 +49,19 @@ using namespace Mogre;
 #elif GRAPHICS_MONOGAME
 #using <MonoGame.Framework.dll>
 using namespace Microsoft::Xna::Framework;
+#elif GRAPHICS_NUMERICS
+using namespace System::Numerics;
 #elif GRAPHICS_OPENTK
 using namespace OpenTK;
-#elif GRAPHICS_AXIOM
-#using <Axiom.dll>
-using namespace Axiom::Math;
-#elif GRAPHICS_WAPICODEPACK
+#elif GRAPHICS_SLIMDX
 #if WIN32
-#using <x86/Microsoft.WindowsAPICodePack.DirectX.dll>
-#else
-#using <x64/Microsoft.WindowsAPICodePack.DirectX.dll>
+#using <x86/SlimDX.dll>
+#elif WIN64
+#using <x64/SlimDX.dll>
 #endif
-using namespace Microsoft::WindowsAPICodePack::DirectX::Direct3D;
+using namespace SlimDX;
+#elif GRAPHICS_SHARPDX
+using namespace SharpDX;
 #elif GRAPHICS_GENERIC
 #else
 #define GRAPHICS_GENERIC 1
@@ -95,18 +72,23 @@ using namespace Microsoft::WindowsAPICodePack::DirectX::Direct3D;
 #define BtColor int
 #define BtColorToBtVector(color) new btVector3((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff)
 #define BtVectorToBtColor(color) (((int)(color.getX()*255) << 16) + ((int)(color.getY()*255) << 8) + (int)(color.getZ()*255))
+#elif GRAPHICS_MOGRE
+#define BtColor Mogre::ColourValue
+#define BtColorToBtVector(color) new btVector3(color.r, color.g, color.b)
+#define BtVectorToBtColor(color) BtColor(color.getX(), color.getY(), color.getZ())
 #elif GRAPHICS_MONOGAME
 #define BtColor Microsoft::Xna::Framework::Color
 #define BtColorToBtVector(color) new btVector3(color.R, color.G, color.B)
 #define BtVectorToBtColor(color) BtColor((float)color.getX(), (float)color.getY(), (float)color.getZ()) // cast for DP build
-#elif GRAPHICS_XNA31
-#define BtColor Microsoft::Xna::Framework::Graphics::Color
+#elif GRAPHICS_NUMERICS
+using namespace System::Drawing;
+#define BtColor Color
+#define BtColorToBtVector(color) new btVector3(color.R / btScalar(255.0), color.G / btScalar(255.0), color.B / btScalar(255.0))
+#define BtVectorToBtColor(color) Color::FromArgb(0, (int)(color.getX() * btScalar(255.0)), (int)(color.getY() * btScalar(255.0)), (int)(color.getZ() * btScalar(255.0)))
+#elif GRAPHICS_OPENTK
+#define BtColor OpenTK::Graphics::Color4
 #define BtColorToBtVector(color) new btVector3(color.R, color.G, color.B)
-#define BtVectorToBtColor(color) BtColor((float)color.getX(), (float)color.getY(), (float)color.getZ()) // cast for DP build
-#elif GRAPHICS_XNA40
-#define BtColor Microsoft::Xna::Framework::Color
-#define BtColorToBtVector(color) new btVector3(color.R, color.G, color.B)
-#define BtVectorToBtColor(color) BtColor((float)color.getX(), (float)color.getY(), (float)color.getZ()) // cast for DP build
+#define BtVectorToBtColor(color) BtColor((float)color.getX(), (float)color.getY(), (float)color.getZ(), 1) // cast for DP build
 #elif GRAPHICS_SLIMDX
 #define BtColor Color4
 #define BtColorToBtVector(color) new btVector3(color.Red, color.Green, color.Blue)
@@ -115,23 +97,6 @@ using namespace Microsoft::WindowsAPICodePack::DirectX::Direct3D;
 #define BtColor Color3
 #define BtColorToBtVector(color) new btVector3(color.Red, color.Green, color.Blue)
 #define BtVectorToBtColor(color) BtColor(color.getX(), color.getY(), color.getZ())
-#elif GRAPHICS_MOGRE
-#define BtColor Mogre::ColourValue
-#define BtColorToBtVector(color) new btVector3(color.r, color.g, color.b)
-#define BtVectorToBtColor(color) BtColor(color.getX(), color.getY(), color.getZ())
-#elif GRAPHICS_OPENTK
-#define BtColor OpenTK::Graphics::Color4
-#define BtColorToBtVector(color) new btVector3(color.R, color.G, color.B)
-#define BtVectorToBtColor(color) BtColor(color.getX(), color.getY(), color.getZ(),1)
-#elif GRAPHICS_AXIOM
-#define BtColor Axiom::Core::ColorEx
-#define BtColorToBtVector(color) new btVector3(color.r, color.g, color.b)
-#define BtVectorToBtColor(color) BtColor(color.getX(), color.getY(), color.getZ())
-#elif GRAPHICS_WAPICODEPACK
-using namespace System::Drawing;
-#define BtColor Color
-#define BtColorToBtVector(color) new btVector3(color.R / btScalar(255.0), color.G / btScalar(255.0), color.B / btScalar(255.0))
-#define BtVectorToBtColor(color) Color::FromArgb(0, (int)(color.getX() * btScalar(255.0)), (int)(color.getY() * btScalar(255.0)), (int)(color.getZ() * btScalar(255.0)))
 #elif GRAPHICS_GENERIC
 using namespace System::Drawing;
 #define BtColor Color
@@ -263,62 +228,6 @@ using namespace System::Drawing;
 #include <BulletDynamics/MLCPSolvers/btMLCPSolverInterface.h>
 #endif
 
-#if defined(USE_MINICL)
-#include <MiniCL/cl.h>
-#if _DEBUG
-#pragma comment(lib, "MiniCL_Debug.lib")
-#pragma comment(lib, "BulletSoftBodySolvers_OpenCL_Mini_Debug.lib")
-#else
-#pragma comment(lib, "MiniCL_MinsizeRel.lib")
-#pragma comment(lib, "BulletSoftBodySolvers_OpenCL_Mini_MinsizeRel.lib")
-#endif
-#endif
-
-#if defined(USE_INTEL_OPENCL)
-#include <CL/cl.h>
-#pragma comment(lib, "OpenCL.lib")
-#if _DEBUG
-#pragma comment(lib, "BulletSoftBodySolvers_OpenCL_Intel_Debug.lib")
-#else
-#pragma comment(lib, "BulletSoftBodySolvers_OpenCL_Intel_MinsizeRel.lib")
-#endif
-#elif defined(USE_AMD_OPENCL)
-#include <CL/cl.h>
-#pragma comment(lib, "OpenCL.lib")
-#if _DEBUG
-#pragma comment(lib, "BulletSoftBodySolvers_OpenCL_AMD_Debug.lib")
-#else
-#pragma comment(lib, "BulletSoftBodySolvers_OpenCL_AMD_MinsizeRel.lib")
-#endif
-#elif defined(USE_NVIDIA_OPENCL)
-#include <CL/cl.h>
-#pragma comment(lib, "OpenCL.lib")
-#if _DEBUG
-#pragma comment(lib, "BulletSoftBodySolvers_OpenCL_NVidia_Debug.lib")
-#else
-#pragma comment(lib, "BulletSoftBodySolvers_OpenCL_NVidia_MinsizeRel.lib")
-#endif
-#endif
-
-#ifndef DISABLE_MULTITHREADED
-#if _DEBUG
-#pragma comment(lib, "BulletMultiThreaded_Debug.lib")
-#else
-#pragma comment(lib, "BulletMultiThreaded_MinSizeRel.lib")
-#endif
-#define __BT_SKIP_UINT64_H 1
-#include <BulletMultiThreaded/btParallelConstraintSolver.h>
-#include <BulletMultiThreaded/btThreadSupportInterface.h>
-#include <BulletMultiThreaded/SpuGatheringCollisionDispatcher.h>
-#include <BulletMultiThreaded/SpuNarrowPhaseCollisionTask/SpuGatheringCollisionTask.h>
-#include <BulletMultiThreaded/Win32ThreadSupport.h>
-#ifndef DISABLE_SOFTBODY
-#ifdef __OPENCL_CL_H
-#include <BulletMultiThreaded/GpuSoftBodySolvers/OpenCL/btSoftBodySolver_OpenCL.h>
-#endif
-#endif
-#endif
-
 #ifndef DISABLE_SERIALIZE
 #if _DEBUG
 #pragma comment(lib, "BulletWorldImporter_Debug.lib")
@@ -366,6 +275,7 @@ using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Diagnostics;
 using namespace System::Runtime::InteropServices;
+using namespace System::Security;
 
 #include "Math.h"
 #include "Enums.h"

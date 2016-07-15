@@ -181,15 +181,8 @@ Dispatcher::~Dispatcher()
 
 Dispatcher::!Dispatcher()
 {
-	if (this->IsDisposed)
-		return;
-
-	OnDisposing(this, nullptr);
-
 	delete _native;
 	_native = NULL;
-
-	OnDisposed(this, nullptr);
 }
 
 IntPtr Dispatcher::AllocateCollisionAlgorithm(int size)
@@ -262,7 +255,11 @@ PersistentManifold Dispatcher::InternalManifoldPointer::get()
 #ifndef DISABLE_UNCOMMON
 PoolAllocator^ Dispatcher::InternalManifoldPool::get()
 {
-	return gcnew PoolAllocator(_native->getInternalManifoldPool());
+	if (!_internalManifoldPool)
+	{
+		_internalManifoldPool = gcnew PoolAllocator(_native->getInternalManifoldPool(), true);
+	}
+	return _internalManifoldPool;
 }
 #endif
 

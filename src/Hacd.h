@@ -8,7 +8,7 @@ namespace BulletSharp
 		HACD::HACD* _native;
 
 	private:
-		[UnmanagedFunctionPointer(CallingConvention::Cdecl)]
+		[UnmanagedFunctionPointer(CallingConvention::Cdecl), SuppressUnmanagedCodeSecurity]
 		delegate bool CallbackFunctionUnmanagedDelegate(IntPtr msg,
 			double progress, double globalConcavity, IntPtr n);
 	public:
@@ -17,12 +17,10 @@ namespace BulletSharp
 	private:
 		HACD::Vec3<HACD::Real>* _points;
 		HACD::Vec3<long>* _triangles;
-        CallbackFunctionUnmanagedDelegate^ _callbackFunctionUnmanaged;
-        CallBackFunction^ _callbackFunction;
+		CallbackFunctionUnmanagedDelegate^ _callbackFunctionUnmanaged;
+		CallBackFunction^ _callbackFunction;
 
-	public:
 		!Hacd();
-	protected:
 		~Hacd();
 
 	private:

@@ -47,6 +47,8 @@ namespace BulletSharp
 		GImpactShapeInterface(btGImpactShapeInterface* native);
 
 	public:
+		virtual void GetAabbRef(Matrix% t, [Out] Vector3% aabbMin, [Out] Vector3% aabbMax) override;
+		virtual void GetAabb(Matrix t, [Out] Vector3% aabbMin, [Out] Vector3% aabbMax) override;
 		void GetBulletTetrahedron(int primIndex, TetrahedronShapeEx^ tetrahedron);
 		void GetBulletTriangle(int primIndex, TriangleShapeEx^ triangle);
 		void GetChildAabb(int childIndex, Matrix t, [Out] Vector3% aabbMin, [Out] Vector3% aabbMax);
@@ -163,6 +165,8 @@ namespace BulletSharp
 #ifndef DISABLE_BVH
 		ref class TrimeshPrimitiveManager : PrimitiveManagerBase
 		{
+			StridingMeshInterface^ _meshInterface;
+
 		internal:
 			TrimeshPrimitiveManager(btGImpactMeshShapePart::TrimeshPrimitiveManager* native);
 
@@ -298,11 +302,11 @@ namespace BulletSharp
 
 	public ref class GImpactMeshShape : GImpactShapeInterface
 	{
+		StridingMeshInterface^ _meshInterface;
+		array<GImpactMeshShapePart^>^ _meshParts;
+
 	internal:
 		GImpactMeshShape(btGImpactMeshShape* native);
-
-	private:
-		StridingMeshInterface^ _meshInterface;
 
 	public:
 		GImpactMeshShape(StridingMeshInterface^ meshInterface);

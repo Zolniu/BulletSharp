@@ -5,31 +5,13 @@ using BulletSharp;
 
 namespace DemoFramework
 {
-    public abstract class Graphics : System.IDisposable
+    public abstract class Graphics : IDisposable
     {
-        public Demo Demo
-        {
-            get;
-            protected set;
-        }
+        public Demo Demo { get; protected set; }
+        public Form Form { get; protected set; }
 
-        public Form Form
-        {
-            get;
-            protected set;
-        }
-
-        public virtual float FarPlane
-        {
-            get;
-            set;
-        }
-
-        public float FieldOfView
-        {
-            get;
-            protected set;
-        }
+        public virtual float FarPlane { get; set; }
+        public float FieldOfView { get; protected set; }
 
         public virtual float AspectRatio
         {
@@ -40,11 +22,10 @@ namespace DemoFramework
             }
         }
 
-        public virtual bool IsFullScreen
-        {
-            get;
-            set;
-        }
+        public virtual bool IsFullScreen { get; set; }
+        public virtual bool CullingEnabled { get; set; }
+
+        public string InfoText { get; set; } = "";
 
         public MeshFactory MeshFactory;
 

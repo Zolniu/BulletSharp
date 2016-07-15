@@ -150,9 +150,23 @@ void LocalRayResult::LocalShapeInfo::set(BulletSharp::LocalShapeInfo^ value)
 }
 
 
+float RayResultCallback::AddSingleResultUnmanaged(IntPtr rayResult, bool normalInWorldSpace)
+{
+	return AddSingleResult(gcnew LocalRayResult(static_cast<btCollisionWorld::LocalRayResult*>(rayResult.ToPointer()), true), normalInWorldSpace);
+}
+
+bool RayResultCallback::NeedsCollisionUnmanaged(IntPtr proxy0)
+{
+	return NeedsCollision(BroadphaseProxy::GetManaged(static_cast<btBroadphaseProxy*>(proxy0.ToPointer())));
+}
+
 RayResultCallback::RayResultCallback()
 {
-	_native = ALIGNED_NEW(RayResultCallbackWrapper) (this);
+	_addSingleResult = gcnew AddSingleResultUnmanagedDelegate(this, &RayResultCallback::AddSingleResultUnmanaged);
+	_needsCollision = gcnew NeedsCollisionUnmanagedDelegate(this, &RayResultCallback::NeedsCollisionUnmanaged);
+	_native = ALIGNED_NEW(RayResultCallbackWrapper) (
+		(pRayResultCallback_AddSingleResult) Marshal::GetFunctionPointerForDelegate(_addSingleResult).ToPointer(),
+		(pRayResultCallback_NeedsCollision) Marshal::GetFunctionPointerForDelegate(_needsCollision).ToPointer());
 }
 
 RayResultCallback::~RayResultCallback()
@@ -231,24 +245,21 @@ bool RayResultCallback::IsDisposed::get()
 
 #define Callback static_cast<BulletSharp::RayResultCallback^>(VoidPtrToGCHandle(_callback).Target)
 
-RayResultCallbackWrapper::RayResultCallbackWrapper(BulletSharp::RayResultCallback^ callback)
+RayResultCallbackWrapper::RayResultCallbackWrapper(pRayResultCallback_AddSingleResult addSingleResultCallback,
+	pRayResultCallback_NeedsCollision needsCollisionCallback)
 {
-	_callback = GCHandleToVoidPtr(GCHandle::Alloc(callback, GCHandleType::Weak));
-}
-
-RayResultCallbackWrapper::~RayResultCallbackWrapper()
-{
-	VoidPtrToGCHandle(_callback).Free();
+	_addSingleResultCallback = addSingleResultCallback;
+	_needsCollisionCallback = needsCollisionCallback;
 }
 
 bool RayResultCallbackWrapper::needsCollision(btBroadphaseProxy* proxy0) const
 {
-	return Callback->NeedsCollision(BroadphaseProxy::GetManaged(proxy0));
+	return _needsCollisionCallback(proxy0);
 }
 
 btScalar RayResultCallbackWrapper::addSingleResult(btCollisionWorld::LocalRayResult& rayResult, bool normalInWorldSpace)
 {
-	return Callback->AddSingleResult(gcnew LocalRayResult(&rayResult, true), normalInWorldSpace);
+	return _addSingleResultCallback(rayResult, normalInWorldSpace);
 }
 
 
@@ -422,105 +433,103 @@ void LocalConvexResult::LocalShapeInfo::set(BulletSharp::LocalShapeInfo^ value)
 }
 
 
-ConvexResultCallback::~ConvexResultCallback()
-{
-	this->!ConvexResultCallback();
-}
-
-ConvexResultCallback::!ConvexResultCallback()
-{
-	ALIGNED_FREE(_native);
-	_native = NULL;
-}
-
 ConvexResultCallback::ConvexResultCallback()
 {
-	_native = ALIGNED_NEW(ConvexResultCallbackWrapper) (this);
+	_closestHitFraction = btScalar(1.0);
+	_collisionFilterGroup = CollisionFilterGroups::DefaultFilter;
+	_collisionFilterMask = CollisionFilterGroups::AllFilter;
 }
 
 bool ConvexResultCallback::NeedsCollision(BroadphaseProxy^ proxy0)
 {
-	bool collides = (proxy0->CollisionFilterGroup & CollisionFilterMask) != CollisionFilterGroups::None;
-	collides = collides && (CollisionFilterGroup & proxy0->CollisionFilterMask) != CollisionFilterGroups::None;
+	bool collides = (proxy0->CollisionFilterGroup & _collisionFilterMask) != CollisionFilterGroups::None;
+	collides = collides && (_collisionFilterGroup & proxy0->CollisionFilterMask) != CollisionFilterGroups::None;
 	return collides;
 }
 
 btScalar ConvexResultCallback::ClosestHitFraction::get()
 {
-	return _native->m_closestHitFraction;
+	if (_native)
+	{
+		return _native->m_closestHitFraction;
+	}
+	return _closestHitFraction;
 }
 void ConvexResultCallback::ClosestHitFraction::set(btScalar value)
 {
-	_native->m_closestHitFraction = value;
+	if (_native)
+	{
+		_native->m_closestHitFraction = value;
+	}
+	else
+	{
+		_closestHitFraction = value;
+	}
 }
 
 CollisionFilterGroups ConvexResultCallback::CollisionFilterGroup::get()
 {
-	return (CollisionFilterGroups)_native->m_collisionFilterGroup;
+	return _collisionFilterGroup;
 }
 void ConvexResultCallback::CollisionFilterGroup::set(CollisionFilterGroups value)
 {
-	_native->m_collisionFilterGroup = (short int)value;
+	_collisionFilterGroup = value;
 }
 
 CollisionFilterGroups ConvexResultCallback::CollisionFilterMask::get()
 {
-	return (CollisionFilterGroups)_native->m_collisionFilterMask;
+	return _collisionFilterMask;
 }
 void ConvexResultCallback::CollisionFilterMask::set(CollisionFilterGroups value)
 {
-	_native->m_collisionFilterMask = (short int)value;
+	_collisionFilterMask = value;
 }
 
 bool ConvexResultCallback::HasHit::get()
 {
-	return _native->hasHit();
+	return ClosestHitFraction < btScalar(1.0);
 }
 
-bool ConvexResultCallback::IsDisposed::get()
-{
-	return (_native == NULL);
-}
-
-
-#undef Callback
-#define Callback static_cast<BulletSharp::ConvexResultCallback^>(VoidPtrToGCHandle(_callback).Target)
 
 ConvexResultCallbackWrapper::ConvexResultCallbackWrapper(BulletSharp::ConvexResultCallback^ callback)
 {
-	_callback = GCHandleToVoidPtr(GCHandle::Alloc(callback, GCHandleType::Weak));
+	m_closestHitFraction = callback->ClosestHitFraction;
+	callback->_native = this;
+	_callback = GCHandle::Alloc(callback);
+	_callbackPtr = GCHandleToVoidPtr(_callback);
 }
 
 ConvexResultCallbackWrapper::~ConvexResultCallbackWrapper()
 {
-	VoidPtrToGCHandle(_callback).Free();
+	BulletSharp::ConvexResultCallback^ callback = static_cast<BulletSharp::ConvexResultCallback^>(_callback.Target);
+	callback->_native = 0;
+	callback->ClosestHitFraction = m_closestHitFraction;
+	_callback.Free();
 }
 
 bool ConvexResultCallbackWrapper::needsCollision(btBroadphaseProxy* proxy0) const
 {
-	return Callback->NeedsCollision(BroadphaseProxy::GetManaged(proxy0));
+	// const method cannot access this->GCHandle directly, use void pointer
+	return static_cast<BulletSharp::ConvexResultCallback^>(VoidPtrToGCHandle(_callbackPtr).Target)->NeedsCollision(BroadphaseProxy::GetManaged(proxy0));
 }
 
 btScalar ConvexResultCallbackWrapper::addSingleResult(btCollisionWorld::LocalConvexResult& rayResult, bool normalInWorldSpace)
 {
-	return Callback->AddSingleResult(gcnew LocalConvexResult(&rayResult, true), normalInWorldSpace);
+	return static_cast<BulletSharp::ConvexResultCallback^>(_callback.Target)->AddSingleResult(gcnew LocalConvexResult(&rayResult, true), normalInWorldSpace);
 }
 
 
-ClosestConvexResultCallback::ClosestConvexResultCallback(Vector3 convexFromWorld,
-	Vector3 convexToWorld)
+ClosestConvexResultCallback::ClosestConvexResultCallback()
 {
-	_convexFromWorld = convexFromWorld;
-	_convexToWorld = convexToWorld;
 }
-/*
+
 ClosestConvexResultCallback::ClosestConvexResultCallback(Vector3% convexFromWorld,
 	Vector3% convexToWorld)
 {
 	_convexFromWorld = convexFromWorld;
 	_convexToWorld = convexToWorld;
 }
-*/
+
 #pragma managed(push, off)
 void ClosestConvexResultCallback_AddSingleResult(btCollisionWorld::LocalConvexResult* convexResult, bool normalInWorldSpace,
 	btVector3* hitNormalWorld)
@@ -598,11 +607,8 @@ void ClosestConvexResultCallback::HitPointWorld::set(Vector3 value)
 }
 
 
-ClosestRayResultCallback::ClosestRayResultCallback(Vector3 rayFromWorld,
-	Vector3 rayToWorld)
+ClosestRayResultCallback::ClosestRayResultCallback()
 {
-	_rayFromWorld = rayFromWorld;
-	_rayToWorld = rayToWorld;
 }
 
 ClosestRayResultCallback::ClosestRayResultCallback(Vector3% rayFromWorld,
@@ -671,53 +677,35 @@ void ClosestRayResultCallback::RayToWorld::set(Vector3 value)
 }
 
 
-ContactResultCallback::~ContactResultCallback()
-{
-	this->!ContactResultCallback();
-}
-
-ContactResultCallback::!ContactResultCallback()
-{
-	if (this->IsDisposed)
-		return;
-	
-	delete _native;
-	_native = NULL;
-}
-
 ContactResultCallback::ContactResultCallback()
 {
-	_native = new ContactResultCallbackWrapper(this);
+	_collisionFilterGroup = CollisionFilterGroups::DefaultFilter;
+	_collisionFilterMask = CollisionFilterGroups::AllFilter;
 }
 
 bool ContactResultCallback::NeedsCollision(BroadphaseProxy^ proxy0)
 {
-	bool collides = (proxy0->CollisionFilterGroup & CollisionFilterMask) != CollisionFilterGroups::None;
-	collides = collides && (CollisionFilterGroup & proxy0->CollisionFilterMask) != CollisionFilterGroups::None;
+	bool collides = (proxy0->CollisionFilterGroup & _collisionFilterMask) != CollisionFilterGroups::None;
+	collides = collides && (_collisionFilterGroup & proxy0->CollisionFilterMask) != CollisionFilterGroups::None;
 	return collides;
 }
 
 CollisionFilterGroups ContactResultCallback::CollisionFilterGroup::get()
 {
-	return (CollisionFilterGroups)_native->m_collisionFilterGroup;
+	return _collisionFilterGroup;
 }
 void ContactResultCallback::CollisionFilterGroup::set(CollisionFilterGroups value)
 {
-	_native->m_collisionFilterGroup = (short int)value;
+	_collisionFilterGroup = value;
 }
 
 CollisionFilterGroups ContactResultCallback::CollisionFilterMask::get()
 {
-	return (CollisionFilterGroups)_native->m_collisionFilterMask;
+	return _collisionFilterMask;
 }
 void ContactResultCallback::CollisionFilterMask::set(CollisionFilterGroups value)
 {
-	_native->m_collisionFilterMask = (short int)value;
-}
-
-bool ContactResultCallback::IsDisposed::get()
-{
-	return (_native == NULL);
+	_collisionFilterMask = value;
 }
 
 
@@ -743,9 +731,31 @@ btScalar ContactResultCallbackWrapper::addSingleResult(btManifoldPoint& cp,
 	const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
 	const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
 {
-	return Callback->AddSingleResult(gcnew ManifoldPoint(&cp, true),
+	btScalar ret = Callback->AddSingleResult(gcnew ManifoldPoint(&cp, true),
 		gcnew CollisionObjectWrapper((btCollisionObjectWrapper*)colObj0Wrap), partId0, index0,
 		gcnew CollisionObjectWrapper((btCollisionObjectWrapper*)colObj1Wrap), partId1, index1);
+
+	// Bullet may use temporary btTriangleShapes that can be destroyed before before non-deterministic disposal.
+	// Check if these collision shapes were referenced in managed code and clean up any references here.
+	btCollisionShape* collisionShape0 = (btCollisionShape*)colObj0Wrap->getCollisionShape();
+	btCollisionShape* collisionShape1 = (btCollisionShape*)colObj1Wrap->getCollisionShape();
+	
+	if (collisionShape0->getUserPointer() &&
+		collisionShape0->getShapeType() == TRIANGLE_SHAPE_PROXYTYPE &&
+		colObj0Wrap->getCollisionObject()->getCollisionShape() != collisionShape0)
+	{
+		delete CollisionShape::GetManaged(collisionShape0);
+		collisionShape0->setUserPointer(0);
+	}
+	if (collisionShape1->getUserPointer() &&
+		collisionShape1->getShapeType() == TRIANGLE_SHAPE_PROXYTYPE &&
+		colObj1Wrap->getCollisionObject()->getCollisionShape() != collisionShape1)
+	{
+		delete CollisionShape::GetManaged(collisionShape1);
+		collisionShape1->setUserPointer(0);
+	}
+
+	return ret;
 }
 
 
@@ -805,6 +815,10 @@ CollisionWorld::!CollisionWorld()
 			"The BroadphaseInterface was disposed before the CollisionWorld. "
 			"It is required for CollisionWorld cleanup, so dispose it later than the world.");
 	}
+#else
+	if (_collisionObjectArray->_native != 0) {
+		_collisionObjectArray->Clear();
+	}
 #endif
 
 	if (_broadphase->IsDisposed) {
@@ -839,12 +853,14 @@ void CollisionWorld::ComputeOverlappingPairs()
 void CollisionWorld::ContactPairTest(CollisionObject^ colObjA, CollisionObject^ colObjB,
 	ContactResultCallback^ resultCallback)
 {
-	_native->contactPairTest(colObjA->_native, colObjB->_native, *resultCallback->_native);
+	ContactResultCallbackWrapper result = ContactResultCallbackWrapper(resultCallback);
+	_native->contactPairTest(colObjA->_native, colObjB->_native, result);
 }
 
 void CollisionWorld::ContactTest(CollisionObject^ colObj, ContactResultCallback^ resultCallback)
 {
-	_native->contactTest(colObj->_native, *resultCallback->_native);
+	ContactResultCallbackWrapper result = ContactResultCallbackWrapper(resultCallback);
+	_native->contactTest(colObj->_native, result);
 }
 
 void CollisionWorld::ConvexSweepTest(ConvexShape^ castShape, Matrix from, Matrix to,
@@ -852,8 +868,9 @@ void CollisionWorld::ConvexSweepTest(ConvexShape^ castShape, Matrix from, Matrix
 {
 	TRANSFORM_CONV(from);
 	TRANSFORM_CONV(to);
+	ConvexResultCallbackWrapper result = ConvexResultCallbackWrapper(resultCallback);
 	_native->convexSweepTest((btConvexShape*)castShape->_native, TRANSFORM_USE(from),
-		TRANSFORM_USE(to), *resultCallback->_native, allowedCcdPenetration);
+		TRANSFORM_USE(to), result, allowedCcdPenetration);
 	TRANSFORM_DEL(from);
 	TRANSFORM_DEL(to);
 }
@@ -863,8 +880,9 @@ void CollisionWorld::ConvexSweepTest(ConvexShape^ castShape, Matrix from, Matrix
 {
 	TRANSFORM_CONV(from);
 	TRANSFORM_CONV(to);
+	ConvexResultCallbackWrapper result = ConvexResultCallbackWrapper(resultCallback);
 	_native->convexSweepTest((btConvexShape*)castShape->_native, TRANSFORM_USE(from),
-		TRANSFORM_USE(to), *resultCallback->_native);
+		TRANSFORM_USE(to), result);
 	TRANSFORM_DEL(from);
 	TRANSFORM_DEL(to);
 }
@@ -892,9 +910,10 @@ void CollisionWorld::ObjectQuerySingle(ConvexShape^ castShape, Matrix rayFromTra
 	TRANSFORM_CONV(rayFromTrans);
 	TRANSFORM_CONV(rayToTrans);
 	TRANSFORM_CONV(colObjWorldTransform);
+	ConvexResultCallbackWrapper result = ConvexResultCallbackWrapper(resultCallback);
 	btCollisionWorld::objectQuerySingle((btConvexShape*)castShape->_native, TRANSFORM_USE(rayFromTrans),
 		TRANSFORM_USE(rayToTrans), collisionObject->_native, collisionShape->_native,
-		TRANSFORM_USE(colObjWorldTransform), *resultCallback->_native, allowedPenetration);
+		TRANSFORM_USE(colObjWorldTransform), result, allowedPenetration);
 	TRANSFORM_DEL(rayFromTrans);
 	TRANSFORM_DEL(rayToTrans);
 	TRANSFORM_DEL(colObjWorldTransform);

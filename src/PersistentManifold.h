@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Scalar.h"
-
 namespace BulletSharp
 {
 	ref class ManifoldPoint;

@@ -53,14 +53,12 @@ namespace VehicleDemo
             Freelook.SetEyeTarget(eye, target);
 
             Graphics.SetFormText("BulletSharp - Vehicle Demo");
-            Graphics.SetInfoText("Move using mouse and WASD+shift\n" +
-                "F3 - Toggle debug\n" +
-                //"F11 - Toggle fullscreen\n" +
-                "Space - Shoot box, break\n" +
-                "Drive with arrow keys");
+            DemoText = "Drive with arrow keys\n" +
+                "Space - break";
 
             Graphics.FarPlane = 600.0f;
             //DebugDrawMode = DebugDrawModes.DrawAabb;
+            IsDebugDrawEnabled = true;
         }
 
         protected override void OnInitializePhysics()
@@ -78,7 +76,6 @@ namespace VehicleDemo
             //Broadphase = new DbvtBroadphase();
 
             World = new DiscreteDynamicsWorld(Dispatcher, Broadphase, Solver, CollisionConf);
-            IsDebugDrawEnabled = true;
 
             int i;
             Matrix tr;
@@ -99,19 +96,21 @@ namespace VehicleDemo
 
                 TriangleIndexVertexArray vertexArray = new TriangleIndexVertexArray();
                 IndexedMesh mesh = new IndexedMesh();
-                mesh.Allocate(totalVerts, vertStride, totalTriangles, indexStride);
+                mesh.Allocate(totalTriangles, totalVerts, indexStride, vertStride, PhyScalarType.Int32, PhyScalarType.Single);
 
-                BulletSharp.DataStream data = mesh.LockVerts();
-                for (i = 0; i < NUM_VERTS_X; i++)
+                using (var data = mesh.LockVerts())
                 {
-                    for (int j = 0; j < NUM_VERTS_Y; j++)
+                    for (i = 0; i < NUM_VERTS_X; i++)
                     {
-                        float wl = .2f;
-                        float height = 20.0f * (float)(Math.Sin(i * wl) * Math.Cos(j * wl));
+                        for (int j = 0; j < NUM_VERTS_Y; j++)
+                        {
+                            float wl = .2f;
+                            float height = 20.0f * (float)(Math.Sin(i * wl) * Math.Cos(j * wl));
 
-                        data.Write((i - NUM_VERTS_X * 0.5f) * scale);
-                        data.Write(height);
-                        data.Write((j - NUM_VERTS_Y * 0.5f) * scale);
+                            data.Write((i - NUM_VERTS_X * 0.5f) * scale);
+                            data.Write(height);
+                            data.Write((j - NUM_VERTS_Y * 0.5f) * scale);
+                        }
                     }
                 }
 
@@ -396,7 +395,7 @@ namespace VehicleDemo
         {
             using (Demo demo = new VehicleDemo())
             {
-                LibraryManager.Initialize(demo);
+                GraphicsLibraryManager.Run(demo);
             }
         }
     }

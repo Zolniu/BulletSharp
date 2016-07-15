@@ -7,10 +7,17 @@
 #include "PersistentManifold.h"
 #include "SphereBoxCollisionAlgorithm.h"
 
-SphereBoxCollisionAlgorithm::CreateFunc::CreateFunc()
-	: CollisionAlgorithmCreateFunc(new btSphereBoxCollisionAlgorithm::CreateFunc())
+SphereBoxCollisionAlgorithm::CreateFunc::CreateFunc(btSphereBoxCollisionAlgorithm::CreateFunc* native)
+	: CollisionAlgorithmCreateFunc(native, true)
 {
 }
+
+SphereBoxCollisionAlgorithm::CreateFunc::CreateFunc()
+	: CollisionAlgorithmCreateFunc(new btSphereBoxCollisionAlgorithm::CreateFunc(), false)
+{
+}
+
+
 #define Native static_cast<btSphereBoxCollisionAlgorithm*>(_native)
 
 SphereBoxCollisionAlgorithm::SphereBoxCollisionAlgorithm(PersistentManifold mf, CollisionAlgorithmConstructionInfo^ ci,

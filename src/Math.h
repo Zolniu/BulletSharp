@@ -1,26 +1,28 @@
 #pragma once
 
-#if GRAPHICS_GENERIC
-#include "Matrix.h"
-#include "Quaternion.h"
-#include "Vector3.h"
-#include "Vector4.h"
-#elif GRAPHICS_AXIOM
-#define Matrix Matrix4^
-#elif GRAPHICS_MOGRE
+#if GRAPHICS_MOGRE
 #define Matrix Matrix4^
 using namespace Mogre;
+#elif GRAPHICS_NUMERICS
+#define Matrix Matrix4x4
 #elif GRAPHICS_OPENTK
 #ifdef BT_USE_DOUBLE_PRECISION
+#define Vector3 Vector3d
+#define Vector4 Vector4d
 #define Matrix Matrix4d
 #else
 #define Matrix Matrix4
 #endif
-#elif GRAPHICS_WAPICODEPACK
-#define Vector3 Vector3F
-#define Vector4 Vector4F
-#define Quaternion Vector4
-#define Matrix Matrix4x4F
+#elif GRAPHICS_SHARPDX
+#define Matrix SharpDX::Matrix
+#define Quaternion SharpDX::Quaternion
+#define Vector3 SharpDX::Vector3
+#define Vector4 SharpDX::Vector4
+#elif GRAPHICS_GENERIC
+#include "Matrix.h"
+#include "Quaternion.h"
+#include "Vector3.h"
+#include "Vector4.h"
 #endif
 
 #if (defined(BT_USE_DOUBLE_PRECISION) && !defined(GRAPHICS_GENERIC) && !defined(GRAPHICS_OPENTK)) || \
@@ -82,24 +84,20 @@ using namespace Mogre;
 #define QUATERNION_USE(t) *QUATERNION_PTR(t)
 #define QUATERNION_DEL(t) ALIGNED_FREE(QUATERNION_PTR(t))
 
-#if defined(GRAPHICS_MOGRE) || defined(GRAPHICS_AXIOM)
+#ifdef GRAPHICS_MOGRE
 #define Vector_X(v) btScalar((v).x)
 #define Vector_Y(v) btScalar((v).y)
 #define Vector_Z(v) btScalar((v).z)
 #define Vector_W(v) btScalar((v).w)
-#else
-#define Vector_X(v) btScalar((v).X)
-#define Vector_Y(v) btScalar((v).Y)
-#define Vector_Z(v) btScalar((v).Z)
-#define Vector_W(v) btScalar((v).W)
-#endif
-
-#if defined(GRAPHICS_MOGRE) || defined(GRAPHICS_AXIOM)
 #define Vector_SetX(v, s) (v).x = s
 #define Vector_SetY(v, s) (v).y = s
 #define Vector_SetZ(v, s) (v).z = s
 #define Vector_SetW(v, s) (v).w = s
 #else
+#define Vector_X(v) btScalar((v).X)
+#define Vector_Y(v) btScalar((v).Y)
+#define Vector_Z(v) btScalar((v).Z)
+#define Vector_W(v) btScalar((v).W)
 #define Vector_SetX(v, s) (v).X = s
 #define Vector_SetY(v, s) (v).Y = s
 #define Vector_SetZ(v, s) (v).Z = s
@@ -123,15 +121,9 @@ namespace BulletSharp
 		}
 		static inline void BtVector3ToVector3(const btVector3* vector, [Out] Vector3% vectorOut)
 		{
-#if defined(GRAPHICS_MOGRE) || defined(GRAPHICS_AXIOM)
-			vectorOut.x = vector->m_floats[0];
-			vectorOut.y = vector->m_floats[1];
-			vectorOut.z = vector->m_floats[2];
-#else
-			vectorOut.X = vector->m_floats[0];
-			vectorOut.Y = vector->m_floats[1];
-			vectorOut.Z = vector->m_floats[2];
-#endif
+			Vector_SetX(vectorOut, vector->m_floats[0]);
+			Vector_SetY(vectorOut, vector->m_floats[1]);
+			Vector_SetZ(vectorOut, vector->m_floats[2]);
 		}
 		static btVector3* Vector3ToBtVector3(Vector3%);
 		static void Vector3ToBtVector3(Vector3%, btVector3*);
@@ -160,41 +152,15 @@ namespace BulletSharp
 	};
 };
 
-#if defined(GRAPHICS_MOGRE) || defined(GRAPHICS_AXIOM)
 #define BtVector3ToVector3Fast(v, out) \
-	out.x = (v)->m_floats[0]; \
-	out.y = (v)->m_floats[1]; \
-	out.z = (v)->m_floats[2];
-#else
-#define BtVector3ToVector3Fast(v, out) \
-	out.X = (v)->m_floats[0]; \
-	out.Y = (v)->m_floats[1]; \
-	out.Z = (v)->m_floats[2];
-#endif
+	Vector_SetX(out, (v)->m_floats[0]); \
+	Vector_SetY(out, (v)->m_floats[1]); \
+	Vector_SetZ(out, (v)->m_floats[2]);
 
 #define BtVector3ToVector3FastRet(v) Vector3((v)->m_floats[0], (v)->m_floats[1], (v)->m_floats[2])
 
 #if defined(GRAPHICS_MOGRE)
 #define BtTransformToMatrixFast(transform, out)	out = gcnew Mogre::Matrix4(); \
-	btScalar* m = (btScalar*)&transform; \
-	out->m00 = m[0]; \
-	out->m01 = m[1]; \
-	out->m02 = m[2]; \
-	out->m30 = 0; \
-	out->m10 = m[4]; \
-	out->m11 = m[5]; \
-	out->m12 = m[6]; \
-	out->m31 = 0; \
-	out->m20 = m[8]; \
-	out->m21 = m[9]; \
-	out->m22 = m[10]; \
-	out->m32 = 0; \
-	out->m03 = m[12]; \
-	out->m13 = m[13]; \
-	out->m23 = m[14]; \
-	out->m33 = 1;
-#elif defined(GRAPHICS_AXIOM)
-#define BtTransformToMatrixFast(transform, out)	out = gcnew Axiom::Math::Matrix4(); \
 	btScalar* m = (btScalar*)&transform; \
 	out->m00 = m[0]; \
 	out->m01 = m[1]; \
@@ -237,47 +203,30 @@ namespace BulletSharp
 
 #define Vector3_IsFuzzyZero(v) btFuzzyZero(Vector_X(v)) && btFuzzyZero(Vector_Y(v)) && btFuzzyZero(Vector_Z(v))
 
-#if defined(GRAPHICS_WAPICODEPACK)
-#define Vector3_Neg(v) Vector3(-(v).X, -(v).Y, -(v).Z)
-#define Vector3_Scale(v, s) Vector3((v).X * (s), (v).Y * (s), (v).Z * (s))
-#else
-#define Vector3_Neg(v) -(v)
-#define Vector3_Scale(v, s) (v) * (s)
-#endif
-
-#if defined(GRAPHICS_XNA30) || defined(GRAPHICS_XNA40) || defined(GRAPHICS_MONOGAME) || defined(GRAPHICS_SHARPDX) || defined(GRAPHICS_SLIMDX)
+#if defined(GRAPHICS_MONOGAME) || defined(GRAPHICS_NUMERICS) || defined(GRAPHICS_SHARPDX) || defined(GRAPHICS_SLIMDX)
 #define Vector3_Length(v) (v).Length()
-#elif defined(GRAPHICS_WAPICODEPACK)
-#define Vector3_Length(v) btSqrt(((v).X * (v).X) + ((v).Y * (v).Y) + ((v).Z * (v).Z))
 #else
 #define Vector3_Length(v) (v).Length
 #endif
 
-#ifdef GRAPHICS_AXIOM
-#define Vector3_Cross(left, right, result) result = (left).Cross(right)
-#define Vector3_Dot(left, right) btScalar((left).Vector3::Dot(right))
-#define Vector3_Normalize(v) v.Normalize()
-#define Vector3_Zero Vector3::Zero
-#define Matrix_Identity Matrix4::Identity
-#define Matrix_Origin(m) (m)->Translation
-#elif defined(GRAPHICS_MOGRE)
+#if defined(GRAPHICS_MOGRE)
 #define Vector3_Cross(left, right, result) result = (left).CrossProduct(right)
 #define Vector3_Dot(left, right) (left).DotProduct(right)
-#define Vector3_Normalize(v) v.Normalise()
+#define Vector3_Normalize(v) (v).Normalise()
 #define Vector3_Zero Vector3::ZERO
 #define Matrix_Identity Matrix4::IDENTITY
 #define Matrix_Origin(m) (m)->GetTrans()
-#elif defined(GRAPHICS_WAPICODEPACK)
+#elif defined(GRAPHICS_NUMERICS)
 #define Vector3_Cross(left, right, result) result = Vector3::Cross(left, right)
 #define Vector3_Dot(left, right) Vector3::Dot(left, right)
-#define Vector3_Normalize(v) v.NormalizeInPlace()
-#define Vector3_Zero Vector3(0,0,0)
-#define Matrix_Identity Matrix::Identity
-#define Matrix_Origin(m) Vector3((m).M41, (m).M42, (m).M43)
+#define Vector3_Normalize(v) Vector3::Normalize(v)
+#define Vector3_Zero Vector3::Zero
+#define Matrix_Identity Matrix4x4::Identity
+#define Matrix_Origin(m) (m).Translation
 #else
 #define Vector3_Cross(left, right, result) Vector3::Cross(left, right, result)
 #define Vector3_Dot(left, right) Vector3::Dot(left, right)
-#define Vector3_Normalize(v) v.Normalize()
+#define Vector3_Normalize(v) (v).Normalize()
 #define Vector3_Zero Vector3::Zero
 #define Matrix_Identity Matrix::Identity
 #ifdef GRAPHICS_OPENTK
@@ -286,7 +235,7 @@ namespace BulletSharp
 #define Matrix_Origin(m) (m).Origin
 #elif defined(GRAPHICS_SHARPDX)
 #define Matrix_Origin(m) (m).TranslationVector
-#elif defined(GRAPHICS_XNA30) || defined(GRAPHICS_XNA40) || defined(GRAPHICS_MONOGAME)
+#elif defined(GRAPHICS_MONOGAME)
 #define Matrix_Origin(m) (m).Translation
 #else
 #define Matrix_Origin(m) Vector3((m).M41, (m).M42, (m).M43)

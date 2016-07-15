@@ -16,28 +16,31 @@ namespace BulletSharp
 
 	private:
 		bool _preventDelete;
+		bool _ownsData;
 		IntArray^ _triangleIndices;
 		Vector3Array^ _vertices;
 
 	internal:
 		IndexedMesh(btIndexedMesh* native, bool preventDelete);
 
-	public:
 		!IndexedMesh();
-	protected:
 		~IndexedMesh();
 
 	public:
 		IndexedMesh();
 
-		void Allocate(int numVertices, int vertexStride, int numTriangles, int triangleIndexStride);
+		void Allocate(int numTriangles, int numVertices, int triangleIndexStride, int vertexStride,
+			PhyScalarType indexType, PhyScalarType vertexType);
+		void Free();
 		DataStream^ LockIndices();
 		DataStream^ LockVerts();
 
 		property PhyScalarType IndexType
 		{
 			PhyScalarType get();
-			void set(PhyScalarType value);
+			//The index type is set when adding an indexed mesh to the
+			// btTriangleIndexVertexArray, do not set it manually
+			//void set(PhyScalarType value);
 		}
 
 		property int NumTriangles
@@ -97,18 +100,23 @@ namespace BulletSharp
 
 	public ref class TriangleIndexVertexArray : StridingMeshInterface
 	{
+	private:
+		AlignedIndexedMeshArray^ _indexedMeshArray;
+		IndexedMesh^ _initialMesh;
+		List<IndexedMesh^>^ _meshes;
+
 	internal:
 		TriangleIndexVertexArray(btTriangleIndexVertexArray* native);
 
-	private:
-		AlignedIndexedMeshArray^ _indexedMeshArray;
-		List<IndexedMesh^>^ _meshes;
+		!TriangleIndexVertexArray();
+		~TriangleIndexVertexArray();
 
 	public:
 		TriangleIndexVertexArray(int numTriangles, IntPtr triangleIndexBase, int triangleIndexStride,
 			int numVertices, IntPtr vertexBase, int vertexStride);
-		TriangleIndexVertexArray(array<int>^ indices, array<Vector3>^ vertices);
-		TriangleIndexVertexArray(array<int>^ indices, array<btScalar>^ vertices);
+		TriangleIndexVertexArray(ICollection<int>^ indices, ICollection<Vector3>^ vertices);
+		TriangleIndexVertexArray(ICollection<int>^ indices, ICollection<float>^ vertices);
+		TriangleIndexVertexArray(ICollection<int>^ indices, ICollection<double>^ vertices);
 		TriangleIndexVertexArray();
 
 		void AddIndexedMesh(IndexedMesh^ mesh, PhyScalarType indexType);

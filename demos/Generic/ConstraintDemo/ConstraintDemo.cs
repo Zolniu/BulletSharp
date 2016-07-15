@@ -12,7 +12,6 @@ namespace ConstraintDemo
         const DebugDrawModes debugMode = DebugDrawModes.DrawConstraints | DebugDrawModes.DrawConstraintLimits;
 
         public const float CubeHalfExtents = 1.0f;
-        const bool P2P = false;
         Vector3 lowerSliderLimit = new Vector3(-10, 0, 0);
         Vector3 hiSliderLimit = new Vector3(10, 0, 0);
 
@@ -27,11 +26,8 @@ namespace ConstraintDemo
             Freelook.SetEyeTarget(eye, target);
 
             Graphics.SetFormText("BulletSharp - Constraints Demo");
-            Graphics.SetInfoText("Move using mouse and WASD+shift\n" +
-                "F3 - Toggle debug\n" +
-                //"F11 - Toggle fullscreen\n" +
-                "Space - Shoot box");
 
+            IsDebugDrawEnabled = true;
             DebugDrawMode = debugMode;
         }
 
@@ -48,7 +44,6 @@ namespace ConstraintDemo
         protected override void OnInitializePhysics()
         {
             SetupEmptyDynamicsWorld();
-            IsDebugDrawEnabled = true;
 
             CollisionShape groundShape = new BoxShape(50, 1, 50);
             //CollisionShape groundShape = new StaticPlaneShape(Vector3.UnitY, 40);
@@ -60,10 +55,10 @@ namespace ConstraintDemo
             CollisionShapes.Add(shape);
 
 
-            const float THETA = (float)Math.PI/4.0f;
+            const float THETA = (float)Math.PI / 4.0f;
             float L_1 = 2 - (float)Math.Tan(THETA);
             float L_2 = 1 / (float)Math.Cos(THETA);
-            float RATIO = L_2/L_1;
+            float RATIO = L_2 / L_1;
 
             RigidBody bodyA;
             RigidBody bodyB;
@@ -151,15 +146,15 @@ namespace ConstraintDemo
                 axisInB = Vector3.TransformCoordinate(axisInA, body0.CenterOfMassTransform);
             }
 
-            if (P2P)
+#if P2P
             {
                 TypedConstraint p2p = new Point2PointConstraint(body0, pivotInA);
-                //TypedConstraint p2p = new Point2PointConstraint(body0,body1,pivotInA,pivotInB);
-                //TypedConstraint hinge = new HingeConstraint(body0,body1,pivotInA,pivotInB,axisInA,axisInB);
+                //TypedConstraint p2p = new Point2PointConstraint(body0, body1, pivotInA, pivotInB);
+                //TypedConstraint hinge = new HingeConstraint(body0, body1, pivotInA, pivotInB, axisInA, axisInB);
                 World.AddConstraint(p2p);
                 p2p.DebugDrawSize = 5;
             }
-            else
+#else
             {
                 hinge = new HingeConstraint(body0, pivotInA, axisInA);
 
@@ -172,7 +167,7 @@ namespace ConstraintDemo
                 World.AddConstraint(hinge);
                 hinge.DebugDrawSize = 5;
             }
-
+#endif
 
             RigidBody pRbA1 = LocalCreateRigidBody(mass, Matrix.Translation(-20, 0, 30), shape);
             //RigidBody pRbA1 = LocalCreateRigidBody(0.0f, Matrix.Translation(-20, 0, 30), shape);
@@ -344,10 +339,10 @@ namespace ConstraintDemo
 
             RigidBody pBody = LocalCreateRigidBody(1.0f, Matrix.Identity, shape);
             pBody.ActivationState = ActivationState.DisableDeactivation;
-            Vector3 PivotA = new Vector3(10.0f, 0.0f, 0.0f);
+            Vector3 pivotA = new Vector3(10.0f, 0.0f, 0.0f);
             btAxisA = new Vector3(0.0f, 0.0f, 1.0f);
 
-            HingeConstraint pHinge = new HingeConstraint(pBody, PivotA, btAxisA);
+            HingeConstraint pHinge = new HingeConstraint(pBody, pivotA, btAxisA);
             //pHinge.EnableAngularMotor(true, -1.0f, 0.165f); // use for the old solver
             pHinge.EnableAngularMotor(true, -1.0f, 1.65f); // use for the new SIMD solver
             World.AddConstraint(pHinge);
@@ -445,9 +440,9 @@ namespace ConstraintDemo
             // add some data to build constraint frames
             axisA = new Vector3(0, 1, 0);
             axisB = new Vector3(0, 1, 0);
-            Vector3 pivotA = new Vector3(-5, 0, 0);
+            Vector3 pivotA2 = new Vector3(-5, 0, 0);
             Vector3 pivotB = new Vector3(5, 0, 0);
-            spHingeDynAB = new HingeConstraint(pBodyA, pBodyB, pivotA, pivotB, axisA, axisB);
+            spHingeDynAB = new HingeConstraint(pBodyA, pBodyB, pivotA2, pivotB, axisA, axisB);
             spHingeDynAB.SetLimit(-(float)Math.PI / 4, (float)Math.PI / 4);
             // add constraint to world
             World.AddConstraint(spHingeDynAB, true);
@@ -463,7 +458,7 @@ namespace ConstraintDemo
         {
             using (Demo demo = new ConstraintDemo())
             {
-                LibraryManager.Initialize(demo);
+                GraphicsLibraryManager.Run(demo);
             }
         }
     }

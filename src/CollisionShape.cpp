@@ -2,10 +2,11 @@
 
 #include "CollisionShape.h"
 #include "StringConv.h"
+#include "CollisionShape.h"
+#include "TriangleShape.h"
 #ifndef DISABLE_GIMPACT
 #include "GImpactShape.h"
 #endif
-#include "CollisionShape.h"
 #ifndef DISABLE_SERIALIZE
 #include "Serializer.h"
 #endif
@@ -37,9 +38,15 @@ CollisionShape^ CollisionShape::GetManaged(btCollisionShape* collisionShape)
 	case BroadphaseNativeType::TetrahedralShape: // Required for CompoundFromGImpact.Create
 		shape = gcnew BuSimplex1To4((btBU_Simplex1to4*) collisionShape);
 		break;
+	case BroadphaseNativeType::TriangleShape: // Required for ContactCallback from convex-concave algorithm
+		shape = gcnew TriangleShape((btTriangleShape*) collisionShape);
+		break;
+	case BroadphaseNativeType::GImpactShape: // Required for GImpactMeshShape.GetMeshPart
+		shape = gcnew GImpactMeshShapePart((btGImpactMeshShapePart*) collisionShape);
+		break;
 	default:
-		//throw gcnew NotImplementedException();
-		shape = gcnew CollisionShape(collisionShape);
+		throw gcnew NotImplementedException();
+		//shape = gcnew CollisionShape(collisionShape);
 	}
 
 	shape->_preventDelete = true;
@@ -141,7 +148,7 @@ bool CollisionShape::Equals(Object^ obj)
 	return Object::ReferenceEquals(this, obj);
 }
 
-void CollisionShape::GetAabb(Matrix% t, [Out] Vector3% aabbMin, [Out] Vector3% aabbMax)
+void CollisionShape::GetAabbRef(Matrix% t, [Out] Vector3% aabbMin, [Out] Vector3% aabbMax)
 {
 	TRANSFORM_CONV(t);
 	btVector3* aabbMinTemp = ALIGNED_NEW(btVector3);

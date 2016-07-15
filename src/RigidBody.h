@@ -17,14 +17,10 @@ namespace BulletSharp
 	private:
 		BulletSharp::CollisionShape^ _collisionShape;
 
-	public:
 		!RigidBodyConstructionInfo();
-	protected:
 		~RigidBodyConstructionInfo();
 
 	public:
-		//RigidBodyConstructionInfo(btScalar mass, BulletSharp::MotionState^ motionState, CollisionShape^ collisionShape,
-		//	Vector3% localInertia); // Causes ambiguous call in in BulletWorldImporter
 		RigidBodyConstructionInfo(btScalar mass, BulletSharp::MotionState^ motionState, CollisionShape^ collisionShape,
 			Vector3 localInertia);
 		RigidBodyConstructionInfo(btScalar mass, BulletSharp::MotionState^ motionState, CollisionShape^ collisionShape);
@@ -134,9 +130,6 @@ namespace BulletSharp
 
 	public ref class RigidBody : CollisionObject
 	{
-	internal:
-		RigidBody(btRigidBody* native);
-
 	private:
 		MotionState^ _motionState;
 
@@ -158,7 +151,7 @@ namespace BulletSharp
 		btScalar ComputeAngularImpulseDenominator(Vector3 axis);
 		Vector3 ComputeGyroscopicForceExplicit(btScalar maxGyroscopicForce);
 		Vector3 ComputeGyroscopicImpulseImplicitBody(btScalar step);
-		Vector3 ComputeGyroscopicImpulseImplicitWorld(btScalar dt);
+		Vector3 ComputeGyroscopicImpulseImplicitWorld(btScalar deltaTime);
 		btScalar ComputeImpulseDenominator(Vector3 pos, Vector3 normal);
 		void GetAabb([Out] Vector3% aabbMin, [Out] Vector3% aabbMax);
 #ifndef DISABLE_CONSTRAINTS

@@ -13,11 +13,10 @@ namespace BulletSharp
 	internal:
 		btShapeHull* _native;
 
-		//ShapeHull(btShapeHull* native);
+	private:
+		ConvexShape^ _shape;
 
-	public:
 		!ShapeHull();
-	protected:
 		~ShapeHull();
 
 	public:

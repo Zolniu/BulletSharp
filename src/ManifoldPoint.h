@@ -7,6 +7,15 @@ namespace BulletSharp
 	ref class CollisionObjectWrapper;
 	ref class ManifoldPoint;
 
+	[Flags]
+	public enum class ContactPointFlags
+	{
+		None = 0,
+		LateralFrictionInitialized = btContactPointFlags::BT_CONTACT_FLAG_LATERAL_FRICTION_INITIALIZED,
+		HasContactCfm = btContactPointFlags::BT_CONTACT_FLAG_HAS_CONTACT_CFM,
+		HasContactErp = btContactPointFlags::BT_CONTACT_FLAG_HAS_CONTACT_ERP
+	};
+
 #ifdef BT_CALLBACKS_ARE_EVENTS
 	/*
 	public ref class ContactAddedEventArgs : EventArgs
@@ -61,9 +70,7 @@ namespace BulletSharp
 		}
 #endif
 
-	public:
 		!ManifoldPoint();
-	protected:
 		~ManifoldPoint();
 
 	public:
@@ -106,13 +113,13 @@ namespace BulletSharp
 			void set(btScalar value);
 		}
 
-		property btScalar ContactCfm1
+		property btScalar ContactCfm
 		{
 			btScalar get();
 			void set(btScalar value);
 		}
 
-		property btScalar ContactCfm2
+		property btScalar ContactErp
 		{
 			btScalar get();
 			void set(btScalar value);
@@ -130,6 +137,12 @@ namespace BulletSharp
 			void set(btScalar value);
 		}
 
+		property BulletSharp::ContactPointFlags ContactPointFlags
+		{
+			BulletSharp::ContactPointFlags get();
+			void set(BulletSharp::ContactPointFlags value);
+		}
+
 		property btScalar Distance
 		{
 			btScalar get();
@@ -137,6 +150,12 @@ namespace BulletSharp
 		}
 
 		property btScalar Distance1
+		{
+			btScalar get();
+			void set(btScalar value);
+		}
+
+		property btScalar FrictionCfm
 		{
 			btScalar get();
 			void set(btScalar value);
@@ -164,12 +183,6 @@ namespace BulletSharp
 		{
 			Vector3 get();
 			void set(Vector3 value);
-		}
-
-		property bool LateralFrictionInitialized
-		{
-			bool get();
-			void set(bool value);
 		}
 
 		property int LifeTime

@@ -4,7 +4,7 @@
 
 namespace BulletSharp
 {
-	public ref class ConvexShape : CollisionShape // abstract
+	public ref class ConvexShape abstract : CollisionShape
 	{
 	internal:
 		ConvexShape(btConvexShape* native);
@@ -18,7 +18,8 @@ namespace BulletSharp
 		Vector3 LocalGetSupportingVertexWithoutMargin(Vector3 vec);
 		Vector3 LocalGetSupportVertexNonVirtual(Vector3 vec);
 		Vector3 LocalGetSupportVertexWithoutMarginNonVirtual(Vector3 vec);
-		void Project(Matrix transform, Vector3 direction, [Out] btScalar% min, [Out] btScalar% max);
+		void Project(Matrix% transform, Vector3% direction, [Out] btScalar% minProj, [Out] btScalar% maxProj,
+			[Out] Vector3% witnesPtMin, [Out] Vector3% witnesPtMax);
 
 		property btScalar MarginNonVirtual
 		{
