@@ -474,10 +474,7 @@ void AlignedCollisionObjectArray::Add(CollisionObject^ item)
 		switch (itemPtr->getInternalType())
 		{
 		case btCollisionObject::CO_RIGID_BODY:
-			if (item->CollisionShape == nullptr)
-            {
-                return;
-            }
+			if (item->CollisionShape == nullptr) return;
 			static_cast<btDynamicsWorld*>(_collisionWorld)->addRigidBody(static_cast<btRigidBody*>(itemPtr));
 			break;
 		case btCollisionObject::CO_SOFT_BODY:
@@ -504,10 +501,7 @@ void AlignedCollisionObjectArray::Add(CollisionObject^ item, short collisionFilt
 	switch (itemPtr->getInternalType())
 	{
 	case btCollisionObject::CO_RIGID_BODY:
-		if (item->CollisionShape == nullptr)
-        {
-            return;
-        }
+		if (item->CollisionShape == nullptr) return;
 		static_cast<btDynamicsWorld*>(_collisionWorld)->addRigidBody(static_cast<btRigidBody*>(itemPtr), collisionFilterGroup, collisionFilterMask);
 		break;
 	case btCollisionObject::CO_SOFT_BODY:
@@ -603,9 +597,9 @@ int AlignedCollisionObjectArray::IndexOf(CollisionObject^ item)
 void AlignedCollisionObjectArray::PopBack()
 {
 	if (_backingList)
-    {
-        RemoveAt(Count - 1);
-    }
+	{
+		RemoveAt(Count - 1);
+	}
 	else
 	{
 		Native->pop_back();
@@ -614,20 +608,16 @@ void AlignedCollisionObjectArray::PopBack()
 
 bool AlignedCollisionObjectArray::Remove(CollisionObject^ item)
 {
-	btCollisionObject* itemPtr = item->_native;
-
-    if (_backingList)
-    {
-        int index = IndexOf(item);
-		if (index != -1)
-		{
-			RemoveAt(index);
-			return true;
-		}
-		return false;
-    }
+	if (_backingList)
+	{
+		int index = IndexOf(item);
+		if (index == -1) return false;
+		RemoveAt(index);
+		return true;
+	}
 
 	int sizeBefore = Native->size();
+	btCollisionObject* itemPtr = item->_native;
 	Native->remove(itemPtr);
 	return sizeBefore != Native->size();
 }
@@ -635,19 +625,19 @@ bool AlignedCollisionObjectArray::Remove(CollisionObject^ item)
 void AlignedCollisionObjectArray::RemoveAt(int index)
 {
 	unsigned int count = Count;
-	CollisionObject^ item = this[index];
 
 	if (_backingList)
 	{
+		CollisionObject^ item = _backingList[index];
 		btCollisionObject* itemPtr = item->_native;
 
 		switch (itemPtr->getInternalType())
 		{
 		case btCollisionObject::CO_RIGID_BODY:
 			if (item->CollisionShape == nullptr)
-            {
-                return;
-            }
+			{
+				return;
+			}
 			static_cast<btDynamicsWorld*>(_collisionWorld)->removeRigidBody(static_cast<btRigidBody*>(itemPtr));
 			break;
 		case btCollisionObject::CO_SOFT_BODY:
@@ -661,11 +651,11 @@ void AlignedCollisionObjectArray::RemoveAt(int index)
 
 		// Swap the removed item with the last item like Bullet does.
 		count--;
-        if (index != count)
-        {
-            _backingList[index] = _backingList[count];
-        }
-		_backingList->RemoveAt(index);
+		if (index != count)
+		{
+			_backingList[index] = _backingList[count];
+		}
+		_backingList->RemoveAt(count);
 	}
 	else
 	{

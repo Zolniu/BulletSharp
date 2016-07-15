@@ -1,192 +1,85 @@
-﻿using System;
-using BulletSharp;
+﻿using BulletSharp;
+using DemoFramework;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace BasicDemo
 {
-    /// <summary>
-    /// This is the main type for your game
-    /// </summary>
-    public class BasicDemo : Game
+    public class BasicDemo : PhysicsDemo
     {
-        Color activeColor = Color.Orange;
-        Color passiveColor = Color.DarkOrange;
-        Color groundColor = Color.Green;
+        ///create 125 (5x5x5) dynamic objects
+        private const int ArraySizeX = 5, ArraySizeY = 5, ArraySizeZ = 5;
 
-        Vector3 eye = new Vector3(30, 20, 10);
-        Vector3 target = new Vector3(0, 5, 0);
+        private Vector3 _start = new Vector3(
+            -5 - ArraySizeX / 2,
+            -5,
+            -3 - ArraySizeZ / 2);
 
-        GraphicsDeviceManager graphics;
-        GraphicsDevice device;
-        BasicEffect basicEffect;
-        Physics physics;
-        Physics.PhysicsDebugDraw DebugDrawer;
-        bool IsDebugDrawEnabled;
-        bool f3KeyPressed;
+        private Vector3 _eye = new Vector3(30, 20, 10);
+        private Vector3 _target = new Vector3(0, 5, 0);
 
-        Matrix viewMatrix;
-        VertexBuffer groundBox, box;
+        private CollisionShape _boxShape, _groundShape;
 
         public BasicDemo()
-            : base()
         {
-            graphics = new GraphicsDeviceManager(this);
-
             Window.Title = "BulletSharp - MonoGame Basic Demo";
-            Window.AllowUserResizing = true;
-            Window.ClientSizeChanged += Window_ClientSizeChanged;
         }
 
-        void Window_ClientSizeChanged(object sender, EventArgs e)
-        {
-            basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView(
-                MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 200.0f);
-        }
-
-        /// <summary>
-        /// Allows the game to perform any initialization it needs to before starting to run.
-        /// This is where it can query for any required services and load any non-graphic
-        /// related content.  Calling base.Initialize will enumerate through any components
-        /// and initialize them as well.
-        /// </summary>
         protected override void Initialize()
         {
-            physics = new Physics();
-
-            DebugDrawer = new Physics.PhysicsDebugDraw(graphics.GraphicsDevice, basicEffect);
-            physics.World.DebugDrawer = DebugDrawer;
-
             base.Initialize();
-        }
 
-        protected override void EndRun()
-        {
-            physics.ExitPhysics();
-            base.EndRun();
-        }
+            // collision configuration contains default setup for memory, collision setup
+            CollisionConf = new DefaultCollisionConfiguration();
+            Dispatcher = new CollisionDispatcher(CollisionConf);
 
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
-        protected override void LoadContent()
-        {
-            device = graphics.GraphicsDevice;
-            basicEffect = new BasicEffect(device);
+            Broadphase = new DbvtBroadphase();
 
-            basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView(
-                MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 200.0f);
+            World = new DiscreteDynamicsWorld(Dispatcher, Broadphase, null, CollisionConf);
+            World.Gravity = new Vector3(0, -10, 0);
+            World.DebugDrawer = DebugDrawer;
 
-            // Set light
-            basicEffect.AmbientLightColor = Color.Gray.ToVector3();
-            basicEffect.DirectionalLight0.Enabled = true;
-            basicEffect.DirectionalLight0.DiffuseColor = Color.LemonChiffon.ToVector3();
+            // create the ground
+            _groundShape = new BoxShape(50, 1, 50);
+            LoadModel("ground", _groundShape);
+            CollisionShapes.Add(_groundShape);
+            CollisionObject ground = LocalCreateRigidBody(0, Matrix.Identity, _groundShape);
 
-            box = VertexHelper.CreateBox(device, new Vector3(1, 1, 1));
-            groundBox = VertexHelper.CreateBox(device, new Vector3(50, 1, 50));
-        }
+            // create a few dynamic rigidbodies
+            const float mass = 1.0f;
 
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// all content.
-        /// </summary>
-        protected override void UnloadContent()
-        {
-        }
+            _boxShape = new BoxShape(1);
+            LoadModel("cube", _boxShape);
+            CollisionShapes.Add(_boxShape);
 
-        /// <summary>
-        /// Allows the game to run logic such as updating the world,
-        /// checking for collisions, gathering input, and playing audio.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Update(GameTime gameTime)
-        {
-            KeyboardState ns = Keyboard.GetState();
-            if (ns.IsKeyDown(Keys.Escape) || ns.IsKeyDown(Keys.Q))
+            var rbInfo = new RigidBodyConstructionInfo(mass, null, _boxShape);
+            rbInfo.LocalInertia = _boxShape.CalculateLocalInertia(mass);
+
+            for (int k = 0; k < ArraySizeY; k++)
             {
-                Exit();
-            }
-
-            // Toggle debug
-            if (ns.IsKeyDown(Keys.F3))
-            {
-                if (f3KeyPressed == false)
+                for (int i = 0; i < ArraySizeX; i++)
                 {
-                    f3KeyPressed = true;
-                    if (IsDebugDrawEnabled == false)
+                    for (int j = 0; j < ArraySizeZ; j++)
                     {
-                        DebugDrawer.DebugMode = DebugDrawModes.DrawAabb;
-                        IsDebugDrawEnabled = true;
-                    }
-                    else
-                    {
-                        DebugDrawer.DebugMode = DebugDrawModes.None;
-                        IsDebugDrawEnabled = false;
+                        Matrix startTransform = Matrix.CreateTranslation(
+                            _start + new Vector3(2 * i, 2 * k, 2 * j));
+
+                        // using motionstate is recommended, it provides interpolation capabilities
+                        // and only synchronizes 'active' objects
+                        rbInfo.MotionState = new DefaultMotionState(startTransform);
+
+                        var body = new RigidBody(rbInfo);
+
+                        // make it drop from a height
+                        body.Translate(new Vector3(0, 20, 0));
+
+                        World.AddRigidBody(body);
                     }
                 }
             }
-            if (f3KeyPressed == true)
-            {
-                if (ns.IsKeyUp(Keys.F3))
-                    f3KeyPressed = false;
-            }
 
-            viewMatrix = Matrix.CreateLookAt(eye, target, Vector3.UnitY);
+            rbInfo.Dispose();
 
-            physics.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
-
-            base.Update(gameTime);
-        }
-
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Draw(GameTime gameTime)
-        {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
-
-            basicEffect.View = viewMatrix;
-
-
-            // Debug draw
-            basicEffect.VertexColorEnabled = true;
-            basicEffect.LightingEnabled = false;
-
-            basicEffect.World = Matrix.Identity;
-            basicEffect.CurrentTechnique.Passes[0].Apply();
-            DebugDrawer.DrawDebugWorld(physics.World);
-
-
-            // Draw shapes
-            basicEffect.VertexColorEnabled = false;
-            basicEffect.LightingEnabled = true;
-
-            foreach (CollisionObject colObj in physics.World.CollisionObjectArray)
-            {
-                RigidBody body = RigidBody.Upcast(colObj);
-                basicEffect.World = body.MotionState.WorldTransform;
-
-                if ("Ground".Equals(colObj.UserObject))
-                {
-                    basicEffect.DiffuseColor = groundColor.ToVector3();
-                    basicEffect.CurrentTechnique.Passes[0].Apply();
-                    VertexHelper.DrawBox(device, groundBox);
-                    continue;
-                }
-
-                if (colObj.ActivationState == ActivationState.ActiveTag)
-                    basicEffect.DiffuseColor = activeColor.ToVector3();
-                else
-                    basicEffect.DiffuseColor = passiveColor.ToVector3();
-
-                basicEffect.CurrentTechnique.Passes[0].Apply();
-                VertexHelper.DrawBox(device, box);
-            }
-
-            base.Draw(gameTime);
+            FreeLook.SetEyeTarget(ref _eye, ref _target);
         }
     }
 }
