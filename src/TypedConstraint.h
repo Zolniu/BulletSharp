@@ -13,8 +13,8 @@ namespace BulletSharp
 	internal:
 		btJointFeedback* _native;
 
-		!JointFeedback();
 		~JointFeedback();
+		!JointFeedback();
 
 	public:
 		JointFeedback();
@@ -52,8 +52,8 @@ namespace BulletSharp
 		internal:
 			btTypedConstraint::btConstraintInfo1* _native;
 
-			!ConstraintInfo1();
 			~ConstraintInfo1();
+			!ConstraintInfo1();
 
 		public:
 			ConstraintInfo1();
@@ -86,8 +86,8 @@ namespace BulletSharp
 			ScalarArray^ _lowerLimit;
 			ScalarArray^ _upperLimit;
 
-			!ConstraintInfo2();
 			~ConstraintInfo2();
+			!ConstraintInfo2();
 
 		public:
 			ConstraintInfo2();
@@ -113,13 +113,7 @@ namespace BulletSharp
 				btScalar get();
 				void set(btScalar value);
 			}
-			/*
-			property int^ Findex
-			{
-				int^ get();
-				void set(int^ value);
-			}
-			*/
+
 			property btScalar Fps
 			{
 				btScalar get();
@@ -317,8 +311,8 @@ namespace BulletSharp
 	internal:
 		AngularLimit(btAngularLimit* native, bool preventDelete);
 
-		!AngularLimit();
 		~AngularLimit();
+		!AngularLimit();
 
 	public:
 		AngularLimit();
