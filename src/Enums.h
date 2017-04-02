@@ -82,9 +82,8 @@ namespace BulletSharp
 		DisableVisualizeObject = btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT,
 		DisableSpuCollisionProcessing = btCollisionObject::CF_DISABLE_SPU_COLLISION_PROCESSING,
 		HasContactStiffnessDamping = btCollisionObject::CF_HAS_CONTACT_STIFFNESS_DAMPING,
-		HasCustomDebugRenderingColor = btCollisionObject::CF_HAS_CUSTOM_DEBUG_RENDERING_COLOR
-		DisableVisualizeObject = btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT,
-		ContactProcessedCallback = 64
+		HasCustomDebugRenderingColor = btCollisionObject::CF_HAS_CUSTOM_DEBUG_RENDERING_COLOR,
+		ContactProcessedCallback = 2048 //Zolniu: This is my modifiaction to bullet physics and bullet sharp to minimize memory allocation and performance overhead: ContactProcessedCallback is fired only for objects with this flag
 	};
 
 	[Flags]
