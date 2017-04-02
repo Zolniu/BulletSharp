@@ -67,26 +67,19 @@ namespace BulletSharp
 		DefaultCollisionConfiguration(btDefaultCollisionConfiguration* native, PoolAllocator^ collisionAlgorithmPool,
 			PoolAllocator^ persistentManifoldPool);
 
-	private:
-		VoronoiSimplexSolver^ _simplexSolver;
-
 	public:
 		DefaultCollisionConfiguration(DefaultCollisionConstructionInfo^ constructionInfo);
 		DefaultCollisionConfiguration();
 
 		virtual CollisionAlgorithmCreateFunc^ GetCollisionAlgorithmCreateFunc(BroadphaseNativeType proxyType0,
 			BroadphaseNativeType proxyType1) override;
+		CollisionAlgorithmCreateFunc^ GetClosestPointsAlgorithmCreateFunc(BroadphaseNativeType proxyType0,
+			BroadphaseNativeType proxyType1);
 		void SetConvexConvexMultipointIterations(int numPerturbationIterations, int minimumPointsPerturbationThreshold);
 		void SetConvexConvexMultipointIterations(int numPerturbationIterations);
 		void SetConvexConvexMultipointIterations();
 		void SetPlaneConvexMultipointIterations(int numPerturbationIterations, int minimumPointsPerturbationThreshold);
 		void SetPlaneConvexMultipointIterations(int numPerturbationIterations);
 		void SetPlaneConvexMultipointIterations();
-#ifndef DISABLE_UNCOMMON
-		property VoronoiSimplexSolver^ SimplexSolver
-		{
-			VoronoiSimplexSolver^ get();
-		}
-#endif
 	};
 };

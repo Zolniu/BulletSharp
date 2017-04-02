@@ -13,7 +13,6 @@ namespace BulletSharpTest
         {
             Assert.NotNull(conf.CollisionAlgorithmPool);
             Assert.NotNull(conf.PersistentManifoldPool);
-            Assert.NotNull(conf.SimplexSolver);
 
             // Test that the correct collision algorithms are returned in GetCollisionAlgorithmCreateFunc
             var createFunc = conf.GetCollisionAlgorithmCreateFunc(BroadphaseNativeType.BoxShape, BroadphaseNativeType.BoxShape);
@@ -53,13 +52,13 @@ namespace BulletSharpTest
             Assert.IsInstanceOf(typeof(CompoundCompoundCollisionAlgorithm.SwappedCreateFunc), createFunc);
         }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void SetUp()
         {
             conf = new DefaultCollisionConfiguration();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void TearDown()
         {
             conf.Dispose();
