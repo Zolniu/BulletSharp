@@ -4,10 +4,16 @@ namespace BulletSharp
 {
 	ref class ManifoldPoint;
 	ref class CollisionObject;
-	
+#ifdef BT_USE_EFFICIENT_CONTACT_PROCESSED
+	value struct ManifoldPointCompact;
+#endif
+
 #ifdef BT_CALLBACKS_ARE_EVENTS
 	public delegate void ContactDestroyedEventHandler(Object^ userPersistantData);
 	public delegate void ContactProcessedEventHandler(ManifoldPoint^ cp, CollisionObject^ body0, CollisionObject^ body1);
+#ifdef BT_USE_EFFICIENT_CONTACT_PROCESSED
+	public delegate void EfficientContactProcessedEventHandler(ManifoldPointCompact cp, int body0UserIndex, int body2UserIndex);
+#endif
 #else
 	public delegate bool ContactDestroyed(Object^ userPersistantData);
 	public delegate bool ContactProcessed(ManifoldPoint^ cp, CollisionObject^ body0, CollisionObject^ body1);
@@ -23,6 +29,9 @@ namespace BulletSharp
 #ifdef BT_CALLBACKS_ARE_EVENTS
 		static ContactDestroyedEventHandler^ _contactDestroyed;
 		static ContactProcessedEventHandler^ _contactProcessed;
+#ifdef BT_USE_EFFICIENT_CONTACT_PROCESSED
+		static EfficientContactProcessedEventHandler^ _efficientContactProcessed;
+#endif
 
 	public:
 		static event ContactDestroyedEventHandler^ ContactDestroyed
@@ -35,6 +44,14 @@ namespace BulletSharp
 			void add(ContactProcessedEventHandler^ callback);
 			void remove(ContactProcessedEventHandler^ callback);
 		}
+
+#ifdef BT_USE_EFFICIENT_CONTACT_PROCESSED
+		static event EfficientContactProcessedEventHandler^ EfficientContactProcessed
+		{
+			void add(EfficientContactProcessedEventHandler^ callback);
+			void remove(EfficientContactProcessedEventHandler^ callback);
+		}
+#endif
 #else
 		static ContactDestroyed^ _contactDestroyed;
 		static ContactProcessed^ _contactProcessed;

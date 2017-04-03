@@ -42,6 +42,25 @@ namespace BulletSharp
 		CollisionObjectWrapper^ colObj1Wrap, int partId1, int index1);
 #endif
 
+#ifdef BT_USE_EFFICIENT_CONTACT_PROCESSED
+	public value struct ManifoldPointCompact
+	{
+	internal:
+		ManifoldPointCompact(btManifoldPoint* native);
+	public:
+		Vector3 LocalPointA;
+		Vector3 LocalPointB;
+		Vector3 PositionWorldOnA;
+		Vector3 PositionWorldOnB;
+		Vector3 NormalWorldOnB;
+
+		static bool operator== (ManifoldPointCompact value1, ManifoldPointCompact value2);
+		static bool operator!= (ManifoldPointCompact value1, ManifoldPointCompact value2);
+
+		static ManifoldPointCompact Zero;
+	};
+#endif
+
 	public ref class ManifoldPoint
 	{
 	internal:

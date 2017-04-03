@@ -83,7 +83,8 @@ namespace BulletSharp
 		DisableSpuCollisionProcessing = btCollisionObject::CF_DISABLE_SPU_COLLISION_PROCESSING,
 		HasContactStiffnessDamping = btCollisionObject::CF_HAS_CONTACT_STIFFNESS_DAMPING,
 		HasCustomDebugRenderingColor = btCollisionObject::CF_HAS_CUSTOM_DEBUG_RENDERING_COLOR,
-		ContactProcessedCallback = 2048 //Zolniu: This is my modifiaction to bullet physics and bullet sharp to minimize memory allocation and performance overhead: ContactProcessedCallback is fired only for objects with this flag
+
+		EfficientContactProcessedCallback = 2048
 	};
 
 	[Flags]

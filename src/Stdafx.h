@@ -16,7 +16,7 @@
 //#define DISABLE_DBVT
 //#define DISABLE_DEBUGDRAW
 //#define DISABLE_FEATHERSTONE
-//#define DISABLE_GEOMETRY_UTIL
+#define DISABLE_GEOMETRY_UTIL
 //#define DISABLE_GIMPACT
 //#define DISABLE_HACD
 //#define DISABLE_INTERNAL
@@ -38,6 +38,8 @@
 // events instead of delegate properties
 #define BT_CALLBACKS_ARE_EVENTS
 
+//Enable PersistentManifold::EfficientContactProcessed callback which is optimized to not generate memory allocations for .NET GC:
+#define BT_USE_EFFICIENT_CONTACT_PROCESSED
 
 #if GRAPHICS_MOGRE
 #if _DEBUG

@@ -18,16 +18,11 @@ bool onContactDestroyed(void* userPersistentData)
 }
 
 bool onContactProcessed(btManifoldPoint& cp, void* body0, void* body1)
-{
-	if (
-		(((btCollisionObject*)body0)->getCollisionFlags() & (int)CollisionFlags::ContactProcessedCallback) ||
-		(((btCollisionObject*)body1)->getCollisionFlags() & (int)CollisionFlags::ContactProcessedCallback)
-		)
-	{
+{	
 		PersistentManifold::_contactProcessed(gcnew ManifoldPoint(&cp, true),
 			CollisionObject::GetManaged((btCollisionObject*)body0),
 			CollisionObject::GetManaged((btCollisionObject*)body1));
-	}
+	
 	return false;
 }
 
@@ -58,6 +53,35 @@ void PersistentManifold::ContactProcessed::remove(ContactProcessedEventHandler^ 
 		gContactProcessedCallback = 0;
 	}
 }
+
+#ifdef BT_USE_EFFICIENT_CONTACT_PROCESSED
+bool onEfficientContactProcessed(btManifoldPoint& cp, void* body0, void* body1)
+{
+	if (
+		(((btCollisionObject*)body0)->getCollisionFlags() & (int)CollisionFlags::EfficientContactProcessedCallback) ||
+		(((btCollisionObject*)body1)->getCollisionFlags() & (int)CollisionFlags::EfficientContactProcessedCallback)
+		)
+	{
+		PersistentManifold::_efficientContactProcessed(ManifoldPointCompact(&cp), ((btCollisionObject*)body0)->getUserIndex(), ((btCollisionObject*)body1)->getUserIndex());
+	}
+	return false;
+}
+
+void PersistentManifold::EfficientContactProcessed::add(EfficientContactProcessedEventHandler^ callback)
+{
+	gContactProcessedCallback = onEfficientContactProcessed;
+	_efficientContactProcessed += callback;
+}
+void PersistentManifold::EfficientContactProcessed::remove(EfficientContactProcessedEventHandler^ callback)
+{
+	_efficientContactProcessed -= callback;
+	if (!_efficientContactProcessed)
+	{
+		gContactProcessedCallback = 0;
+	}
+}
+#endif
+
 #else
 bool onContactDestroyed(void* userPersistentData)
 {

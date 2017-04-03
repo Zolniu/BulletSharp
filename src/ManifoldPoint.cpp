@@ -4,6 +4,32 @@
 #include "CollisionShape.h"
 #include "ManifoldPoint.h"
 
+#ifdef BT_USE_EFFICIENT_CONTACT_PROCESSED
+ManifoldPointCompact::ManifoldPointCompact(btManifoldPoint * native)
+{
+	LocalPointA = Math::BtVector3ToVector3(&native->m_localPointA);
+	LocalPointB = Math::BtVector3ToVector3(&native->m_localPointB);
+	PositionWorldOnA = Math::BtVector3ToVector3(&native->m_positionWorldOnA);
+	PositionWorldOnB = Math::BtVector3ToVector3(&native->m_positionWorldOnB);
+	NormalWorldOnB = Math::BtVector3ToVector3(&native->m_normalWorldOnB);
+}
+
+bool ManifoldPointCompact::operator== (ManifoldPointCompact value1, ManifoldPointCompact value2)
+{
+	return
+		value1.LocalPointA == value2.LocalPointA &&
+		value1.LocalPointB == value2.LocalPointB &&
+		value1.PositionWorldOnA == value2.PositionWorldOnA &&
+		value1.PositionWorldOnB == value2.PositionWorldOnB &&
+		value1.NormalWorldOnB == value2.NormalWorldOnB;
+}
+
+bool ManifoldPointCompact::operator!= (ManifoldPointCompact value1, ManifoldPointCompact value2)
+{
+	return !(value1 == value2);
+}
+#endif
+
 ManifoldPoint::ManifoldPoint(btManifoldPoint* native, bool preventDelete)
 {
 	_native = native;
