@@ -7,26 +7,39 @@
 #ifdef BT_USE_EFFICIENT_CONTACT_PROCESSED
 ManifoldPointCompact::ManifoldPointCompact(btManifoldPoint * native)
 {
-	LocalPointA = Math::BtVector3ToVector3(&native->m_localPointA);
-	LocalPointB = Math::BtVector3ToVector3(&native->m_localPointB);
-	PositionWorldOnA = Math::BtVector3ToVector3(&native->m_positionWorldOnA);
-	PositionWorldOnB = Math::BtVector3ToVector3(&native->m_positionWorldOnB);
-	NormalWorldOnB = Math::BtVector3ToVector3(&native->m_normalWorldOnB);
+	_native = native;
+
+	LocalPointA = Math::BtVector3ToVector3(&_native->m_localPointA);
+	LocalPointB = Math::BtVector3ToVector3(&_native->m_localPointB);
+	PositionWorldOnA = Math::BtVector3ToVector3(&_native->m_positionWorldOnA);
+	PositionWorldOnB = Math::BtVector3ToVector3(&_native->m_positionWorldOnB);
+	NormalWorldOnB = Math::BtVector3ToVector3(&_native->m_normalWorldOnB);
+}
+
+ManifoldPointCompact::ManifoldPointCompact(ManifoldPoint^ mp)
+{
+	_native = mp->_native;
+
+	LocalPointA = Math::BtVector3ToVector3(&_native->m_localPointA);
+	LocalPointB = Math::BtVector3ToVector3(&_native->m_localPointB);
+	PositionWorldOnA = Math::BtVector3ToVector3(&_native->m_positionWorldOnA);
+	PositionWorldOnB = Math::BtVector3ToVector3(&_native->m_positionWorldOnB);
+	NormalWorldOnB = Math::BtVector3ToVector3(&_native->m_normalWorldOnB);
+}
+
+ManifoldPoint^ ManifoldPointCompact::GetFullManifold()
+{
+	return gcnew ManifoldPoint(_native, true);
 }
 
 bool ManifoldPointCompact::operator== (ManifoldPointCompact value1, ManifoldPointCompact value2)
 {
-	return
-		value1.LocalPointA == value2.LocalPointA &&
-		value1.LocalPointB == value2.LocalPointB &&
-		value1.PositionWorldOnA == value2.PositionWorldOnA &&
-		value1.PositionWorldOnB == value2.PositionWorldOnB &&
-		value1.NormalWorldOnB == value2.NormalWorldOnB;
+	return value1._native == value2._native;
 }
 
 bool ManifoldPointCompact::operator!= (ManifoldPointCompact value1, ManifoldPointCompact value2)
 {
-	return !(value1 == value2);
+	return value1._native != value2._native;
 }
 #endif
 

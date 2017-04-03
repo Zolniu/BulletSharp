@@ -47,12 +47,18 @@ namespace BulletSharp
 	{
 	internal:
 		ManifoldPointCompact(btManifoldPoint* native);
+
+		btManifoldPoint* _native;
 	public:
+		ManifoldPointCompact(ManifoldPoint^ mp);
+
 		Vector3 LocalPointA;
 		Vector3 LocalPointB;
 		Vector3 PositionWorldOnA;
 		Vector3 PositionWorldOnB;
 		Vector3 NormalWorldOnB;
+
+		ManifoldPoint^ GetFullManifold();
 
 		static bool operator== (ManifoldPointCompact value1, ManifoldPointCompact value2);
 		static bool operator!= (ManifoldPointCompact value1, ManifoldPointCompact value2);
